@@ -1,0 +1,8 @@
+# CHANGELOG
+
+## 20200531, 0601
+
+0.0.0: Install OpenJDK and YaCy, and start YaCy.
+
+1. + bin/install_yacy
+2. + test/fixtures/index.html: The listing of latest.yacy.net.

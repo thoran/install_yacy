@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+# install_yacy
+
+# 20200531, 0601
+# 0.0.0
+
+require 'fileutils'
+require 'MacOS/Dmg'
+require 'nokogiri'
+
+def link_open_jdk
+  system('sudo ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk')
+end
+
+def install_openjdk
+  system('brew install openjdk')
+  link_open_jdk
+end
+
+# FIXME
+def latest_macos_yacy
+  HTML.document(URI.open('http://latest.yacy.net')).search('a[href]').reverse.detect{|e| e =~ /\.dmg/}
+end
+
+# FIXME
+def download(url)
+  url
+end
+
+def download_yacy
+  Dir.chdir("/Users/#{current_user}/Downloads")
+  download(latest_macos_yacy)
+end
+
+def mount_yacy_image
+  MacOS::Dmg.mount("/Users/#{current_user}/Downloads/yacy_v1.922_20191013_9964.dmg")
+end
+
+def copy_yacy_to_applications_dir
+  if Dir.exist?("/Users/#{current_user}/Applications")
+    FileUtils.cp_pr('/Volumes/YaCy/YaCy.app', "/Users/#{current_user}/Applications")
+  else
+    FileUtils.cp_pr('/Volumes/YaCy/YaCy.app', '/Applications')
+  end
+end
+
+def install_yacy
+  download_yacy
+  mount_yacy_image
+  copy_yacy_to_applications_dir
+end
+
+def start_yacy
+  system("open -a 'YaCy'")
+end
+
+def open_yacy_search_page
+  system('open http://localhost:8090')
+end
+
+def main
+  install_openjdk
+  install_yacy
+  start_yacy
+  open_yacy_search_page
+end
+
+main
+
