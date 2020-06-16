@@ -2,7 +2,7 @@
 # install_yacy
 
 # 20200615, 16
-# 0.0.1
+# 0.1.0
 
 require 'fileutils'
 require 'MacOS/Dmg'
@@ -57,19 +57,15 @@ def install_yacy
   copy_yacy_to_applications_dir
 end
 
+# This also performs the equivalent of `open http://localhost:8090`.
 def start_yacy
   system("open -a 'YaCy'")
-end
-
-def open_yacy_search_page
-  system('open http://localhost:8090')
 end
 
 def main
   install_openjdk
   install_yacy
   start_yacy
-  open_yacy_search_page
 end
 
 main

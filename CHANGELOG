@@ -2,6 +2,14 @@
 
 ## 20200615, 16
 
+0.1.0: - open_yacy_search_page(), since starting YaCy opens its search page.
+
+1. - open_yacy_search_page()
+2. ~ main(): - open_yacy_search_page
+
+
+## 20200615, 16
+
 0.0.1: Download the latest YaCy disk image for macOS.
 
 1. + require 'open-uri'
