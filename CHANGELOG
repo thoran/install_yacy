@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 20200615, 16
+
+0.0.1: Download the latest YaCy disk image for macOS.
+
+1. + require 'open-uri'
+2. + current_user()
+3. ~ latest_macos_yacy(): Read the listing with Nokogiri, and take the href of the last link to a .dmg.
+4. ~ download(): Write what the URL gives to a file of the same name.
+
+
 ## 20200531, 0601
 
 0.0.0: Install OpenJDK and YaCy, and start YaCy.
