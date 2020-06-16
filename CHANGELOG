@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 20200616
+
+0.2.0: Install Homebrew where it isn't installed, and do nothing where YaCy is installed.
+
+1. + require 'FileUtils/which'
+2. + require 'Kernel/run'
+3. + homebrew_installed?()
+4. + install_homebrew()
+5. + yacy_installed?()
+6. /link_open_jdk/link_openjdk/
+7. ~ link_openjdk(), install_openjdk(), start_yacy(): Use run().
+8. ~ download_yacy(): Download from latest.yacy.net, not from the filename alone.
+9. ~ copy_yacy_to_applications_dir(): /FileUtils.cp_pr/FileUtils.cp_r/, FileUtils having no cp_pr.
+10. ~ main(): Install Homebrew unless it is installed, and everything only unless YaCy is installed.
+
+
 ## 20200615, 16
 
 0.1.0: - open_yacy_search_page(), since starting YaCy opens its search page.

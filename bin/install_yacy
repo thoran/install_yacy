@@ -1,21 +1,45 @@
 #!/usr/bin/env ruby
 # install_yacy
 
-# 20200615, 16
-# 0.1.0
+# 20200616
+# 0.2.0
+
+# Changes:
+# -/0: Homebrew installation stuff
+# 1. + require 'FileUtils/which'
+# 2. + require 'Kernel/run'
+# 3. + homebrew_installed?()
+# 4. + install_homebrew()
+# 5. + yacy_installed?()
+# 6. ~ main(): yacy_installed?
 
 require 'fileutils'
+require 'FileUtils/which'
+require 'Kernel/run'
 require 'MacOS/Dmg'
 require 'nokogiri'
 require 'open-uri'
 
-def link_open_jdk
-  system('sudo ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk')
+def yacy_installed?
+  File.exist?("/Users/#{current_user}/Applications/YaCy.app") ||
+    File.exist?("/Users/Applications/YaCy.app")
+end
+
+def homebrew_installed?
+  FileUtils.which('brew')
+end
+
+def install_homebrew
+  run('/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"', show: true)
+end
+
+def link_openjdk
+  run('sudo ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk', show: true)
 end
 
 def install_openjdk
-  system('brew install openjdk')
-  link_open_jdk
+  run('brew install openjdk', show: true)
+  link_openjdk
 end
 
 def latest_macos_yacy
@@ -36,18 +60,19 @@ end
 
 def download_yacy
   Dir.chdir("/Users/#{current_user}/Downloads")
-  download(latest_macos_yacy)
+  download("http://latest.yacy.net/#{latest_macos_yacy}")
 end
 
 def mount_yacy_image
-  MacOS::Dmg.mount("/Users/#{current_user}/Downloads/yacy_v1.922_20191013_9964.dmg")
+  dmg_filename = "/Users/#{current_user}/Downloads/yacy_v1.922_20191013_9964.dmg"
+  MacOS::Dmg.mount(dmg_filename)
 end
 
 def copy_yacy_to_applications_dir
   if Dir.exist?("/Users/#{current_user}/Applications")
-    FileUtils.cp_pr('/Volumes/YaCy/YaCy.app', "/Users/#{current_user}/Applications")
+    FileUtils.cp_r('/Volumes/YaCy/YaCy.app', "/Users/#{current_user}/Applications")
   else
-    FileUtils.cp_pr('/Volumes/YaCy/YaCy.app', '/Applications')
+    FileUtils.cp_r('/Volumes/YaCy/YaCy.app', '/Applications')
   end
 end
 
@@ -59,12 +84,15 @@ end
 
 # This also performs the equivalent of `open http://localhost:8090`.
 def start_yacy
-  system("open -a 'YaCy'")
+  run("open -a 'YaCy'", show: true)
 end
 
 def main
-  install_openjdk
-  install_yacy
+  unless yacy_installed?
+    install_homebrew unless homebrew_installed?
+    install_openjdk
+    install_yacy
+  end
   start_yacy
 end
 
