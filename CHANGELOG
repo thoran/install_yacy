@@ -2,6 +2,20 @@
 
 ## 20200616
 
+0.2.1: Carry the libraries in lib/, and install nokogiri where it isn't installed.
+
+1. + lib/FileUtils/where.rb: Taken from FileUtils/where 0.0.3.
+2. + lib/FileUtils/which.rb: Taken from FileUtils#which 0.0.0.
+3. + lib/Kernel/run.rb: Taken from Kernel/run 0.1.5.
+4. + lib/MacOS/Dmg.rb: Taken from MacOS/Dmg 0.6.0.
+5. + lib/File/self.basename_without_extname.rb, lib/Thoran/File/SelfBasenameWithoutExtname/self.basename_without_extname.rb: Taken from File/self.basename_without_extname 0.2.0 and Thoran::File::SelfBasenameWithoutExtname 0.3.0.
+6. + lib/Platform/: Taken from Platform/OS, which FileUtils/where requires.
+7. + Gemfile: gem 'nokogiri'
+8. + lib_dir, which is put on the load path.
+9. + require_nokogiri(): Install nokogiri where it can't be required.
+10. /require 'nokogiri'/require_nokogiri/
+
+
 0.2.0: Install Homebrew where it isn't installed, and do nothing where YaCy is installed.
 
 1. + require 'FileUtils/which'

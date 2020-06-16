@@ -2,7 +2,7 @@
 # install_yacy
 
 # 20200616
-# 0.2.0
+# 0.2.1
 
 # Changes:
 # -/0: Homebrew installation stuff
@@ -12,12 +12,27 @@
 # 4. + install_homebrew()
 # 5. + yacy_installed?()
 # 6. ~ main(): yacy_installed?
+# 0/1: Local lib and Gem dependencies
+# 7. + ./lib/
+# 8. + ./Gemfile
+# 9. /require 'nokogiri'/require_nokogiri/
+# 10. + require_nokogiri
+# 11. + lib_dir
+
+lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
+$LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
+
+def require_nokogiri
+  require 'nokogiri'
+rescue
+  run('gem install nokogiri', show: true)
+end
 
 require 'fileutils'
 require 'FileUtils/which'
 require 'Kernel/run'
 require 'MacOS/Dmg'
-require 'nokogiri'
+require_nokogiri
 require 'open-uri'
 
 def yacy_installed?
