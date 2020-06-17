@@ -2,6 +2,22 @@
 
 ## 20200616
 
+0.2.2: + test/install_yacy.rb, and unmount the disk image once YaCy is copied.
+
+1. + Prerequisite, How to use and Todo sections in the header.
+2. /latest_macos_yacy()/latest_macos_yacy_filename()/
+3. + url_for_latest_macos_yacy_file()
+4. + download_dir()
+5. ~ download_yacy(): Use download_dir() and url_for_latest_macos_yacy_file().
+6. + dmg_filename()
+7. ~ mount_yacy_image(): Use dmg_filename().
+8. + unmount_yacy_image()
+9. ~ install_yacy(): + unmount_yacy_image
+10. + self-run wrapper for the call to main, so as to enable this to be tested without firing.
+11. + test/install_yacy.rb: The latest filename is read from a stubbed latest.yacy.net.
+12. ~ Gemfile: + gem 'minitest', + gem 'minitest-spec-context', + gem 'webmock'
+
+
 0.2.1: Carry the libraries in lib/, and install nokogiri where it isn't installed.
 
 1. + lib/FileUtils/where.rb: Taken from FileUtils/where 0.0.3.

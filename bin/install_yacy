@@ -2,7 +2,25 @@
 # install_yacy
 
 # 20200616
-# 0.2.1
+# 0.2.2
+
+# Prerequisite: Ruby is installed, which it should be already!
+
+# How to use:
+# 1. Press the <cmd> and <space> keys on the keyboard simultaneously.
+# 2. Type: "Terminal.app" and press the <return> key.
+# 3. Type: "cd <the directory where this can be found>"
+# 3. Type: "ruby ./install_yacy" and press the <return> key.
+# 5. If prompted, enter the password you use to login to your computer.
+# 6. YaCy will then open a tab in your default web browser pointing at the address http://localhost:8090.
+# 7. When wanting to stop YaCy, find the dock icon (A white box with a cartoon character with a red nose.) and quit it.
+
+# Todo: (one or more of the following, in no particular order)
+# 1. Turn this into a brew formula.
+# 2. Remove some of the comments here and put those into a README or INSTALL or other files as appropriate.
+# 3. Create a(n) .app out of this by using some simple wrapper code.
+# 4. Make it cross-platform: OSX, Linux, and Windows, at least.
+# 5. Clean up the required libraries so that they are either gemified and/or reduced in number.
 
 # Changes:
 # -/0: Homebrew installation stuff
@@ -18,6 +36,19 @@
 # 9. /require 'nokogiri'/require_nokogiri/
 # 10. + require_nokogiri
 # 11. + lib_dir
+# 1/2: Automated testing and changes to facilitate that
+# 12. + "How to use:" section above
+# 13. + "Todo:" section above
+# 14. + ./test/install_yacy.rb 
+# 15. /latest_macos_yacy()/latest_macos_yacy_filename()/
+# 16. + url_for_latest_macos_yacy_file()
+# 17. + download_dir()
+# 18. ~ download_yacy()
+# 19. + dmg_filename()
+# 20. ~ mount_yacy_image()
+# 21. + unmount_yacy_image()
+# 22. ~ install_yacy()
+# 23. + self-run wrapper for main call, so as to enable this to be tested without firing.
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
@@ -57,9 +88,13 @@ def install_openjdk
   link_openjdk
 end
 
-def latest_macos_yacy
+def latest_macos_yacy_filename
   doc = Nokogiri.HTML(URI.open('http://latest.yacy.net'))
   doc.search('a').map{|e| e[:href]}.reverse.detect{|e| e =~ /\.dmg/}
+end
+
+def url_for_latest_macos_yacy_file
+  "http://latest.yacy.net/#{latest_macos_yacy_filename}"
 end
 
 def current_user
@@ -73,13 +108,20 @@ def download(url)
   end
 end
 
+def download_dir
+  "/Users/#{current_user}/Downloads"
+end
+
 def download_yacy
-  Dir.chdir("/Users/#{current_user}/Downloads")
-  download("http://latest.yacy.net/#{latest_macos_yacy}")
+  Dir.chdir(download_dir)
+  download(url_for_latest_macos_yacy_file)
+end
+
+def dmg_filename
+  "#{download_dir}/yacy_v1.922_20191013_9964.dmg"
 end
 
 def mount_yacy_image
-  dmg_filename = "/Users/#{current_user}/Downloads/yacy_v1.922_20191013_9964.dmg"
   MacOS::Dmg.mount(dmg_filename)
 end
 
@@ -91,10 +133,15 @@ def copy_yacy_to_applications_dir
   end
 end
 
+def unmount_yacy_image
+  MacOS::Dmg.unmount('YaCy')
+end
+
 def install_yacy
   download_yacy
   mount_yacy_image
   copy_yacy_to_applications_dir
+  unmount_yacy_image
 end
 
 # This also performs the equivalent of `open http://localhost:8090`.
@@ -111,4 +158,6 @@ def main
   start_yacy
 end
 
-main
+if $0 == __FILE__
+  main
+end
