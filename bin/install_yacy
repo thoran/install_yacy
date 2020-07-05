@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # install_yacy
 
-# 20200616
-# 0.2.2
+# 20200705
+# 0.2.3
 
 # Prerequisite: Ruby is installed, which it should be already!
 
@@ -49,6 +49,8 @@
 # 21. + unmount_yacy_image()
 # 22. ~ install_yacy()
 # 23. + self-run wrapper for main call, so as to enable this to be tested without firing.
+# 2/3
+# 24. ~ yacy_installed?: The path for the system installed Yacy.app was wrong.
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
@@ -68,7 +70,7 @@ require 'open-uri'
 
 def yacy_installed?
   File.exist?("/Users/#{current_user}/Applications/YaCy.app") ||
-    File.exist?("/Users/Applications/YaCy.app")
+    File.exist?("/Applications/YaCy.app")
 end
 
 def homebrew_installed?
@@ -144,9 +146,9 @@ def install_yacy
   unmount_yacy_image
 end
 
-# This also performs the equivalent of `open http://localhost:8090`.
 def start_yacy
   run("open -a 'YaCy'", show: true)
+  # run('open http://localhost:8090', show: true) # This command is not necessary because `open -a YaCy` also does `open http://localhost:8090`.
 end
 
 def main

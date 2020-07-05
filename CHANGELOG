@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 20200705
+
+0.2.3: ~ yacy_installed?(): The path for a YaCy.app installed for all users was wrong.
+
+1. ~ yacy_installed?(): /\/Users\/Applications/\/Applications/
+
+
 ## 20200616
 
 0.2.2: + test/install_yacy.rb, and unmount the disk image once YaCy is copied.
