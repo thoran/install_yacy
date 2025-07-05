@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 20250705
+
+0.3.0: Download from download.yacy.net, which has replaced latest.yacy.net, and only what isn't already downloaded.
+
+1. + lib/Kernel/require_gem.rb, lib/Thoran/Kernel/RequireGem/require_gem.rb: Taken from Kernel/require_gem 0.0.0 and Thoran::Kernel::RequireGem 0.0.0.
+2. - require_nokogiri()
+3. /require_nokogiri/require_gem 'nokogiri'/
+4. + require 'File/self.basename_without_extname'
+5. + openjdk_installed?()
+6. ~ main(): Install OpenJDK only unless openjdk_installed?.
+7. ~ latest_macos_yacy_filename(): /latest.yacy.net/download.yacy.net/; and memoised.
+8. ~ url_for_latest_macos_yacy_file(): /latest.yacy.net/download.yacy.net/
+9. + yacy_already_downloaded?()
+10. ~ download_yacy(): Download only unless yacy_already_downloaded?.
+11. ~ dmg_filename(): Use latest_macos_yacy_filename().
+12. + latest_macos_yacy_filename_without_extname()
+13. ~ copy_yacy_to_applications_dir(): Use latest_macos_yacy_filename_without_extname().
+14. ~ unmount_yacy_image(): Use latest_macos_yacy_filename_without_extname().
+15. - The self-run wrapper for the call to main.
+
+
 ## 20200705
 
 0.2.3: ~ yacy_installed?(): The path for a YaCy.app installed for all users was wrong.

@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # install_yacy
 
-# 20200705
-# 0.2.3
+# 20250705
+# 0.3.0
 
 # Prerequisite: Ruby is installed, which it should be already!
 
@@ -23,58 +23,44 @@
 # 5. Clean up the required libraries so that they are either gemified and/or reduced in number.
 
 # Changes:
-# -/0: Homebrew installation stuff
-# 1. + require 'FileUtils/which'
-# 2. + require 'Kernel/run'
-# 3. + homebrew_installed?()
-# 4. + install_homebrew()
-# 5. + yacy_installed?()
-# 6. ~ main(): yacy_installed?
-# 0/1: Local lib and Gem dependencies
-# 7. + ./lib/
-# 8. + ./Gemfile
-# 9. /require 'nokogiri'/require_nokogiri/
-# 10. + require_nokogiri
-# 11. + lib_dir
-# 1/2: Automated testing and changes to facilitate that
-# 12. + "How to use:" section above
-# 13. + "Todo:" section above
-# 14. + ./test/install_yacy.rb 
-# 15. /latest_macos_yacy()/latest_macos_yacy_filename()/
-# 16. + url_for_latest_macos_yacy_file()
-# 17. + download_dir()
-# 18. ~ download_yacy()
-# 19. + dmg_filename()
-# 20. ~ mount_yacy_image()
-# 21. + unmount_yacy_image()
-# 22. ~ install_yacy()
-# 23. + self-run wrapper for main call, so as to enable this to be tested without firing.
-# 2/3
-# 24. ~ yacy_installed?: The path for the system installed Yacy.app was wrong.
+# -/0: http://latest.yacy.net seems to have been replaced with https://download.yacy.net.
+# 1. + require 'Kernel/require_gem'
+# 2. /require_nokogiri/require_gem 'nokogiri'/
+# 3. Remove self-run section around main.
+# 4. + openjdk_installed?()
+# 5. ~ main(): Use openjdk_installed?()
+# 6. ~ latest_macos_yacy_filename(): /latest.yacy.net/download.yacy.net/
+# 7. + yacy_already_downloaded?()
+# 8. ~ download_yacy(): Use yacy_already_downloaded?()
+# 9. ~ dmg_filename(): Use latest_macos_yacy_filename().
+# 10. + latest_macos_yacy_filename_without_extname()
+# 11. ~ copy_yacy_to_applications_dir(): Use latest_macos_yacy_filename_without_extname().
+# 12. ~ unmount_yacy_image(): Use latest_macos_yacy_filename_without_extname().
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
-def require_nokogiri
-  require 'nokogiri'
-rescue
-  run('gem install nokogiri', show: true)
-end
-
+require 'File/self.basename_without_extname'
 require 'fileutils'
 require 'FileUtils/which'
+require 'Kernel/require_gem'
 require 'Kernel/run'
 require 'MacOS/Dmg'
-require_nokogiri
 require 'open-uri'
+
+require_gem 'nokogiri'
+
+def homebrew_installed?
+  FileUtils.which('brew')
+end
+
+def openjdk_installed?
+  !`brew list openjdk`.match(/Error: No available formula with the name "openjdk"\./)
+end
 
 def yacy_installed?
   File.exist?("/Users/#{current_user}/Applications/YaCy.app") ||
     File.exist?("/Applications/YaCy.app")
-end
-
-def homebrew_installed?
-  FileUtils.which('brew')
 end
 
 def install_homebrew
@@ -91,16 +77,22 @@ def install_openjdk
 end
 
 def latest_macos_yacy_filename
-  doc = Nokogiri.HTML(URI.open('http://latest.yacy.net'))
-  doc.search('a').map{|e| e[:href]}.reverse.detect{|e| e =~ /\.dmg/}
+  @latest_macos_yacy_filename ||=(
+    doc = Nokogiri.HTML(URI.open('http://download.yacy.net'))
+    doc.search('a').map{|e| e[:href]}.reverse.detect{|e| e =~ /\.dmg/}
+  )
 end
 
 def url_for_latest_macos_yacy_file
-  "http://latest.yacy.net/#{latest_macos_yacy_filename}"
+  "http://download.yacy.net/#{latest_macos_yacy_filename}"
 end
 
 def current_user
   ENV['USER']
+end
+
+def yacy_already_downloaded?
+  File.exist?(dmg_filename)
 end
 
 def download(url)
@@ -116,27 +108,31 @@ end
 
 def download_yacy
   Dir.chdir(download_dir)
-  download(url_for_latest_macos_yacy_file)
+  download(url_for_latest_macos_yacy_file) unless yacy_already_downloaded?
 end
 
 def dmg_filename
-  "#{download_dir}/yacy_v1.922_20191013_9964.dmg"
+  "#{download_dir}/#{latest_macos_yacy_filename}"
 end
 
 def mount_yacy_image
   MacOS::Dmg.mount(dmg_filename)
 end
 
+def latest_macos_yacy_filename_without_extname
+  File.basename_without_extname(latest_macos_yacy_filename)
+end
+
 def copy_yacy_to_applications_dir
   if Dir.exist?("/Users/#{current_user}/Applications")
-    FileUtils.cp_r('/Volumes/YaCy/YaCy.app', "/Users/#{current_user}/Applications")
+    FileUtils.cp_r("/Volumes/#{latest_macos_yacy_filename_without_extname}/#{latest_macos_yacy_filename_without_extname}.app", "/Users/#{current_user}/Applications/YaCy.app")
   else
-    FileUtils.cp_r('/Volumes/YaCy/YaCy.app', '/Applications')
+    FileUtils.cp_r("/Volumes/#{latest_macos_yacy_filename_without_extname}/#{latest_macos_yacy_filename_without_extname}.app", '/Applications/YaCy.app')
   end
 end
 
 def unmount_yacy_image
-  MacOS::Dmg.unmount('YaCy')
+  MacOS::Dmg.unmount(latest_macos_yacy_filename_without_extname)
 end
 
 def install_yacy
@@ -148,18 +144,16 @@ end
 
 def start_yacy
   run("open -a 'YaCy'", show: true)
-  # run('open http://localhost:8090', show: true) # This command is not necessary because `open -a YaCy` also does `open http://localhost:8090`.
+  # run('open http://localhost:8090', show: true) # This command is not necessary because `open -a YaCy` also does `open http://localhost:8090`, though I'd probably prefer it didn't.
 end
 
 def main
   unless yacy_installed?
     install_homebrew unless homebrew_installed?
-    install_openjdk
+    install_openjdk unless openjdk_installed?
     install_yacy
   end
   start_yacy
 end
 
-if $0 == __FILE__
-  main
-end
+main
