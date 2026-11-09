@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # install_yacy
 
-# 20250705
-# 0.3.0
+# 20261109
+# 0.3.1
 
 # Prerequisite: Ruby is installed, which it should be already!
 
@@ -22,25 +22,37 @@
 # 4. Make it cross-platform: OSX, Linux, and Windows, at least.
 # 5. Clean up the required libraries so that they are either gemified and/or reduced in number.
 
-# Changes:
-# -/0: http://latest.yacy.net seems to have been replaced with https://download.yacy.net.
-# 1. + require 'Kernel/require_gem'
-# 2. /require_nokogiri/require_gem 'nokogiri'/
-# 3. Remove self-run section around main.
-# 4. + openjdk_installed?()
-# 5. ~ main(): Use openjdk_installed?()
-# 6. ~ latest_macos_yacy_filename(): /latest.yacy.net/download.yacy.net/
-# 7. + yacy_already_downloaded?()
-# 8. ~ download_yacy(): Use yacy_already_downloaded?()
-# 9. ~ dmg_filename(): Use latest_macos_yacy_filename().
-# 10. + latest_macos_yacy_filename_without_extname()
-# 11. ~ copy_yacy_to_applications_dir(): Use latest_macos_yacy_filename_without_extname().
-# 12. ~ unmount_yacy_image(): Use latest_macos_yacy_filename_without_extname().
+# Changes since 0.3.0:
+# -/0: Copy YaCy.app from the volume YaCy's disk image mounts as, find brew where Homebrew installs itself, and link the JDK from wherever Homebrew is.
+# 1. ~ copy_yacy_to_applications_dir(): The disk image mounts as /Volumes/YaCy, holding YaCy.app, as in 0.2.3, not as /Volumes/<the disk image's name>.
+# 2. ~ unmount_yacy_image(): /Volumes/YaCy likewise.
+# 3. + yacy_volume_name()
+# 4. + yacy_app_on_volume()
+# 5. - latest_macos_yacy_filename_without_extname()
+# 6. - require 'File/self.basename_without_extname': FileUtils/where requires it itself.
+# 7. ~ install_homebrew(): Homebrew's Ruby install script is gone; use its install.sh.
+# 8. ~ openjdk_installed?(): Use `brew list --versions`, since brew says "No such keg" rather than "No available formula" for a formula which isn't installed.
+# 9. ~ link_openjdk(): Link from `brew --prefix openjdk` rather than /usr/local/opt, which is Homebrew's prefix on Intel only.
+# 10. + openjdk_jdk_path()
+# 11. + java_virtual_machine_link()
+# 12. + openjdk_linked?(): A link which is broken counts as none.
+# 13. ~ install_openjdk(): - link_openjdk
+# 14. ~ main(): Link the JDK unless it is linked, and do the Homebrew and JDK steps whether or not YaCy is installed, since YaCy won't start without them; and put Homebrew on PATH unless it is on PATH, since on Apple silicon Homebrew installs itself where it isn't.
+# 15. ~ latest_macos_yacy_filename(), url_for_latest_macos_yacy_file(): /http/https/
+# 16. + self-run wrapper for main call, so as to enable this to be tested without firing, as in 0.2.3.
+# 17. ~ test/install_yacy.rb: Stub https://download.yacy.net/, and expect yacy_v1.942_202608150808_f9c4b9700.dmg; + url_for_latest_macos_yacy_file(), + yacy_app_on_volume(), + homebrew_installed?(), + put_homebrew_on_path(); - require 'ostruct', unused, and no longer a default gem as of Ruby 4.
+# 18. ~ test/fixtures/index.html: The current listing of download.yacy.net.
+# 19. ~ Gemfile: + gem 'ostruct', which Platform/OS/OSX's requirements load, and which is no longer a default gem as of Ruby 4.
+# 20. + homebrew_paths()
+# 21. + brew_path(): The brew on PATH, or else the first of homebrew_paths() which is there.
+# 22. ~ homebrew_installed?(): Use brew_path().
+# 23. + homebrew_on_path?()
+# 24. + put_homebrew_on_path()
+# 25. ~ Gemfile: + gem 'minitest-mock', which has Minitest's stub as of Minitest 6.
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
-require 'File/self.basename_without_extname'
 require 'fileutils'
 require 'FileUtils/which'
 require 'Kernel/require_gem'
@@ -50,12 +62,40 @@ require 'open-uri'
 
 require_gem 'nokogiri'
 
+def homebrew_paths
+  %w{/opt/homebrew/bin/brew /usr/local/bin/brew}
+end
+
+def brew_path
+  FileUtils.which('brew') || homebrew_paths.detect{|path| File.executable?(path)}
+end
+
 def homebrew_installed?
-  FileUtils.which('brew')
+  !!brew_path
+end
+
+def homebrew_on_path?
+  !!FileUtils.which('brew')
+end
+
+def put_homebrew_on_path
+  ENV['PATH'] = "#{File.dirname(brew_path)}:#{ENV['PATH']}"
 end
 
 def openjdk_installed?
-  !`brew list openjdk`.match(/Error: No available formula with the name "openjdk"\./)
+  system('brew list --versions openjdk', out: File::NULL, err: File::NULL)
+end
+
+def openjdk_jdk_path
+  File.join(`brew --prefix openjdk`.chomp, 'libexec', 'openjdk.jdk')
+end
+
+def java_virtual_machine_link
+  '/Library/Java/JavaVirtualMachines/openjdk.jdk'
+end
+
+def openjdk_linked?
+  File.exist?(java_virtual_machine_link)
 end
 
 def yacy_installed?
@@ -64,27 +104,26 @@ def yacy_installed?
 end
 
 def install_homebrew
-  run('/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"', show: true)
+  run('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"', show: true)
 end
 
 def link_openjdk
-  run('sudo ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk', show: true)
+  run("sudo ln -sfn #{openjdk_jdk_path} #{java_virtual_machine_link}", show: true)
 end
 
 def install_openjdk
   run('brew install openjdk', show: true)
-  link_openjdk
 end
 
 def latest_macos_yacy_filename
   @latest_macos_yacy_filename ||=(
-    doc = Nokogiri.HTML(URI.open('http://download.yacy.net'))
+    doc = Nokogiri.HTML(URI.open('https://download.yacy.net'))
     doc.search('a').map{|e| e[:href]}.reverse.detect{|e| e =~ /\.dmg/}
   )
 end
 
 def url_for_latest_macos_yacy_file
-  "http://download.yacy.net/#{latest_macos_yacy_filename}"
+  "https://download.yacy.net/#{latest_macos_yacy_filename}"
 end
 
 def current_user
@@ -119,20 +158,24 @@ def mount_yacy_image
   MacOS::Dmg.mount(dmg_filename)
 end
 
-def latest_macos_yacy_filename_without_extname
-  File.basename_without_extname(latest_macos_yacy_filename)
+def yacy_volume_name
+  'YaCy'
+end
+
+def yacy_app_on_volume
+  "/Volumes/#{yacy_volume_name}/YaCy.app"
 end
 
 def copy_yacy_to_applications_dir
   if Dir.exist?("/Users/#{current_user}/Applications")
-    FileUtils.cp_r("/Volumes/#{latest_macos_yacy_filename_without_extname}/#{latest_macos_yacy_filename_without_extname}.app", "/Users/#{current_user}/Applications/YaCy.app")
+    FileUtils.cp_r(yacy_app_on_volume, "/Users/#{current_user}/Applications/YaCy.app")
   else
-    FileUtils.cp_r("/Volumes/#{latest_macos_yacy_filename_without_extname}/#{latest_macos_yacy_filename_without_extname}.app", '/Applications/YaCy.app')
+    FileUtils.cp_r(yacy_app_on_volume, '/Applications/YaCy.app')
   end
 end
 
 def unmount_yacy_image
-  MacOS::Dmg.unmount(latest_macos_yacy_filename_without_extname)
+  MacOS::Dmg.unmount(yacy_volume_name)
 end
 
 def install_yacy
@@ -148,12 +191,14 @@ def start_yacy
 end
 
 def main
-  unless yacy_installed?
-    install_homebrew unless homebrew_installed?
-    install_openjdk unless openjdk_installed?
-    install_yacy
-  end
+  install_homebrew unless homebrew_installed?
+  put_homebrew_on_path unless homebrew_on_path?
+  install_openjdk unless openjdk_installed?
+  link_openjdk unless openjdk_linked?
+  install_yacy unless yacy_installed?
   start_yacy
 end
 
-main
+if $0 == __FILE__
+  main
+end

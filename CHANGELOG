@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 20261109
+
+0.3.1: Copy YaCy.app from the volume YaCy's disk image mounts as, find brew where Homebrew installs itself, and link the JDK from wherever Homebrew is.
+
+1. ~ copy_yacy_to_applications_dir(): The disk image mounts as /Volumes/YaCy, holding YaCy.app, as in 0.2.3, not as /Volumes/<the disk image's name>.
+2. ~ unmount_yacy_image(): /Volumes/YaCy likewise.
+3. + yacy_volume_name()
+4. + yacy_app_on_volume()
+5. - latest_macos_yacy_filename_without_extname()
+6. - require 'File/self.basename_without_extname': FileUtils/where requires it itself.
+7. ~ install_homebrew(): Homebrew's Ruby install script is gone; use its install.sh.
+8. + homebrew_paths()
+9. + brew_path(): The brew on PATH, or else the first of homebrew_paths() which is there.
+10. ~ homebrew_installed?(): Use brew_path().
+11. + homebrew_on_path?()
+12. + put_homebrew_on_path()
+13. ~ openjdk_installed?(): Use `brew list --versions`, since brew says "No such keg" rather than "No available formula" for a formula which isn't installed.
+14. ~ link_openjdk(): Link from `brew --prefix openjdk` rather than /usr/local/opt, which is Homebrew's prefix on Intel only.
+15. + openjdk_jdk_path()
+16. + java_virtual_machine_link()
+17. + openjdk_linked?(): A link which is broken counts as none.
+18. ~ install_openjdk(): - link_openjdk
+19. ~ main(): Put Homebrew on PATH unless it is on PATH, since on Apple silicon Homebrew installs itself where it isn't; link the JDK unless it is linked; and do the Homebrew and JDK steps whether or not YaCy is installed, since YaCy won't start without them.
+20. ~ latest_macos_yacy_filename(), url_for_latest_macos_yacy_file(): /http/https/
+21. + self-run wrapper for the call to main, as in 0.2.3.
+22. ~ test/install_yacy.rb: Stub https://download.yacy.net/, and expect yacy_v1.942_202608150808_f9c4b9700.dmg; url_for_latest_macos_yacy_file(), yacy_app_on_volume(), homebrew_installed?() and put_homebrew_on_path() are tested; - require 'ostruct', unused, and no longer a default gem as of Ruby 4.
+23. ~ test/fixtures/index.html: The current listing of download.yacy.net.
+24. ~ Gemfile: + gem 'ostruct', which Platform/OS/OSX's requirements load, and which is no longer a default gem as of Ruby 4; + gem 'minitest-mock', which has Minitest's stub as of Minitest 6.
+
+
 ## 20250705
 
 0.3.0: Download from download.yacy.net, which has replaced latest.yacy.net, and only what isn't already downloaded.
