@@ -2,7 +2,7 @@
 # install_yacy
 
 # 20261109
-# 0.3.1
+# 0.4.0
 
 # Prerequisite: Ruby is installed, which it should be already!
 
@@ -22,33 +22,13 @@
 # 4. Make it cross-platform: OSX, Linux, and Windows, at least.
 # 5. Clean up the required libraries so that they are either gemified and/or reduced in number.
 
-# Changes since 0.3.0:
-# -/0: Copy YaCy.app from the volume YaCy's disk image mounts as, find brew where Homebrew installs itself, and link the JDK from wherever Homebrew is.
-# 1. ~ copy_yacy_to_applications_dir(): The disk image mounts as /Volumes/YaCy, holding YaCy.app, as in 0.2.3, not as /Volumes/<the disk image's name>.
-# 2. ~ unmount_yacy_image(): /Volumes/YaCy likewise.
-# 3. + yacy_volume_name()
-# 4. + yacy_app_on_volume()
-# 5. - latest_macos_yacy_filename_without_extname()
-# 6. - require 'File/self.basename_without_extname': FileUtils/where requires it itself.
-# 7. ~ install_homebrew(): Homebrew's Ruby install script is gone; use its install.sh.
-# 8. ~ openjdk_installed?(): Use `brew list --versions`, since brew says "No such keg" rather than "No available formula" for a formula which isn't installed.
-# 9. ~ link_openjdk(): Link from `brew --prefix openjdk` rather than /usr/local/opt, which is Homebrew's prefix on Intel only.
-# 10. + openjdk_jdk_path()
-# 11. + java_virtual_machine_link()
-# 12. + openjdk_linked?(): A link which is broken counts as none.
-# 13. ~ install_openjdk(): - link_openjdk
-# 14. ~ main(): Link the JDK unless it is linked, and do the Homebrew and JDK steps whether or not YaCy is installed, since YaCy won't start without them; and put Homebrew on PATH unless it is on PATH, since on Apple silicon Homebrew installs itself where it isn't.
-# 15. ~ latest_macos_yacy_filename(), url_for_latest_macos_yacy_file(): /http/https/
-# 16. + self-run wrapper for main call, so as to enable this to be tested without firing, as in 0.2.3.
-# 17. ~ test/install_yacy.rb: Stub https://download.yacy.net/, and expect yacy_v1.942_202608150808_f9c4b9700.dmg; + url_for_latest_macos_yacy_file(), + yacy_app_on_volume(), + homebrew_installed?(), + put_homebrew_on_path(); - require 'ostruct', unused, and no longer a default gem as of Ruby 4.
-# 18. ~ test/fixtures/index.html: The current listing of download.yacy.net.
-# 19. ~ Gemfile: + gem 'ostruct', which Platform/OS/OSX's requirements load, and which is no longer a default gem as of Ruby 4.
-# 20. + homebrew_paths()
-# 21. + brew_path(): The brew on PATH, or else the first of homebrew_paths() which is there.
-# 22. ~ homebrew_installed?(): Use brew_path().
-# 23. + homebrew_on_path?()
-# 24. + put_homebrew_on_path()
-# 25. ~ Gemfile: + gem 'minitest-mock', which has Minitest's stub as of Minitest 6.
+# Changes since 0.3.1:
+# -/0: Use MacOS::Dmg from the macos.rb gem rather than a copy of it in lib/.
+# 1. - lib/MacOS/Dmg.rb
+# 2. - require 'MacOS/Dmg'
+# 3. + require_gem 'MacOS/Dmg', gem_name: 'macos.rb'
+# 4. + Gemfile: gem 'macos.rb'
+# 5. ~ test/install_yacy.rb: + MacOS::Dmg is the macos.rb gem's.
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
@@ -57,9 +37,9 @@ require 'fileutils'
 require 'FileUtils/which'
 require 'Kernel/require_gem'
 require 'Kernel/run'
-require 'MacOS/Dmg'
 require 'open-uri'
 
+require_gem 'MacOS/Dmg', gem_name: 'macos.rb'
 require_gem 'nokogiri'
 
 def homebrew_paths

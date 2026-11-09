@@ -2,6 +2,15 @@
 
 ## 20261109
 
+0.4.0: Use MacOS::Dmg from the macos.rb gem rather than a copy of it in lib/.
+
+1. - lib/MacOS/Dmg.rb
+2. - require 'MacOS/Dmg'
+3. + require_gem 'MacOS/Dmg', gem_name: 'macos.rb'
+4. ~ Gemfile: + gem 'macos.rb'
+5. ~ test/install_yacy.rb: MacOS::Dmg is tested to be the macos.rb gem's.
+
+
 0.3.1: Copy YaCy.app from the volume YaCy's disk image mounts as, find brew where Homebrew installs itself, and link the JDK from wherever Homebrew is.
 
 1. ~ copy_yacy_to_applications_dir(): The disk image mounts as /Volumes/YaCy, holding YaCy.app, as in 0.2.3, not as /Volumes/<the disk image's name>.

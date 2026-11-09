@@ -1,5 +1,6 @@
 source 'https://rubygems.org'
 
+gem 'macos.rb'
 gem 'minitest'
 gem 'minitest-mock'
 gem 'minitest-spec-context'

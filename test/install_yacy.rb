@@ -91,4 +91,10 @@ describe "install_yacy" do
       expect(ENV['PATH']).must_equal "/opt/homebrew/bin:#{@path}"
     end
   end
+
+  describe "MacOS::Dmg" do
+    it "is the macos.rb gem's" do
+      expect(MacOS::Dmg.method(:unmount).source_location.first).must_equal File.join(Gem.loaded_specs['macos.rb'].full_gem_path, 'lib', 'MacOS', 'Dmg.rb')
+    end
+  end
 end
