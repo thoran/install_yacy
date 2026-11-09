@@ -2,6 +2,18 @@
 
 ## 20261109
 
+0.4.1: Fewer libraries in lib/, each the current version, none needing anything outside lib/.
+
+1. ~ lib/FileUtils/where.rb: Taken from FileUtils/where 0.1.0, which no longer requires Platform/OS or File/self.basename_without_extname.
+2. ~ lib/Kernel/run.rb: Taken from Kernel/run 0.3.1, which takes keywords and no longer requires Array/extract_optionsX.
+3. ~ lib/Thoran/Kernel/RequireGem/require_gem.rb: Taken from Thoran::Kernel::RequireGem 0.1.0, which activates gem_name before requiring.
+4. - lib/Platform/
+5. - lib/File/
+6. - lib/Thoran/File/
+7. ~ Gemfile: - gem 'ostruct', which only Platform/OS/OSX's requirements loaded.
+8. ~ How to use: + What to do where macOS won't open YaCy.app, since YaCy's disk image is unsigned; + the local network prompt for java; the second step 3 is step 4.
+
+
 0.4.0: Use MacOS::Dmg from the macos.rb gem rather than a copy of it in lib/.
 
 1. - lib/MacOS/Dmg.rb

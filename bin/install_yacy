@@ -2,7 +2,7 @@
 # install_yacy
 
 # 20261109
-# 0.4.0
+# 0.4.1
 
 # Prerequisite: Ruby is installed, which it should be already!
 
@@ -10,10 +10,12 @@
 # 1. Press the <cmd> and <space> keys on the keyboard simultaneously.
 # 2. Type: "Terminal.app" and press the <return> key.
 # 3. Type: "cd <the directory where this can be found>"
-# 3. Type: "ruby ./install_yacy" and press the <return> key.
+# 4. Type: "ruby ./install_yacy" and press the <return> key.
 # 5. If prompted, enter the password you use to login to your computer.
-# 6. YaCy will then open a tab in your default web browser pointing at the address http://localhost:8090.
-# 7. When wanting to stop YaCy, find the dock icon (A white box with a cartoon character with a red nose.) and quit it.
+# 6. If macOS says it could not verify "YaCy.app", click Done and run "ruby ./install_yacy" again, which will then only start YaCy. If it is still blocked, type: "open -a 'System Settings' && open 'x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension'", click Open Anyway beside the message about "YaCy.app", and run "ruby ./install_yacy" again.
+# 7. If asked whether to allow "java" to find devices on local networks, Don't Allow is fine, unless YaCy is to index or find peers on your own network.
+# 8. YaCy will then open a tab in your default web browser pointing at the address http://localhost:8090.
+# 9. When wanting to stop YaCy, find the dock icon (A white box with a cartoon character with a red nose.) and quit it.
 
 # Todo: (one or more of the following, in no particular order)
 # 1. Turn this into a brew formula.
@@ -22,13 +24,16 @@
 # 4. Make it cross-platform: OSX, Linux, and Windows, at least.
 # 5. Clean up the required libraries so that they are either gemified and/or reduced in number.
 
-# Changes since 0.3.1:
-# -/0: Use MacOS::Dmg from the macos.rb gem rather than a copy of it in lib/.
-# 1. - lib/MacOS/Dmg.rb
-# 2. - require 'MacOS/Dmg'
-# 3. + require_gem 'MacOS/Dmg', gem_name: 'macos.rb'
-# 4. + Gemfile: gem 'macos.rb'
-# 5. ~ test/install_yacy.rb: + MacOS::Dmg is the macos.rb gem's.
+# Changes since 0.4.0:
+# -/0: Fewer libraries in lib/, each the current version, none needing anything outside lib/.
+# 1. ~ lib/FileUtils/where.rb: taken from FileUtils/where 0.1.0, which no longer requires Platform/OS or File/self.basename_without_extname.
+# 2. ~ lib/Kernel/run.rb: taken from Kernel/run 0.3.1, which takes keywords and no longer requires Array/extract_optionsX.
+# 3. ~ lib/Thoran/Kernel/RequireGem/require_gem.rb: taken from Thoran::Kernel::RequireGem 0.1.0, which activates gem_name before requiring.
+# 4. - lib/Platform/
+# 5. - lib/File/
+# 6. - lib/Thoran/File/
+# 7. - Gemfile: gem 'ostruct', which only Platform/OS/OSX's requirements loaded.
+# 8. ~ How to use: + what to do where macOS won't open YaCy.app, since YaCy's disk image is unsigned; + the local network prompt for java; the second step 3 is step 4.
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
