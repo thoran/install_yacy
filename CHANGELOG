@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 20261111
+
+0.4.2: + README.md, LICENSE and PROPOSED.md, which take over from the header's How to use and Todo.
+
+1. + README.md: Description, Installation, Dependencies, Usage, Notes, Tests, Contributing and License.
+2. + LICENSE: The MIT text, copyright 2020-2026 thoran. The year is that of the first commit.
+3. + PROPOSED.md: Packaging, Commands, Uninstalling and Platforms.
+4. ~ bin/install_yacy: - Prerequisite and How to use, which the README now gives.
+5. ~ bin/install_yacy: - Todo. Its second and fifth items are done, and the rest are in PROPOSED.md.
+6. ~ bin/install_yacy: - Changes since 0.4.0, which the CHANGELOG holds.
+7. ~ bin/install_yacy: /0.4.1/0.4.2/, and the date.
+
+
 ## 20261109
 
 0.4.1: Fewer libraries in lib/, each the current version, none needing anything outside lib/.
