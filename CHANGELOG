@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 20261111
+
+0.4.2: + README.md
+
+1. + README.md: Description, Installation, Dependencies, Usage, Notes, Tests and Contributing.
+2. ~ bin/install_yacy: /0.4.1/0.4.2/, and the date.
+
+
 ## 20261109
 
 0.4.1: Fewer libraries in lib/, each the current version, none needing anything outside lib/.

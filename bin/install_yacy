@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # install_yacy
 
-# 20261109
-# 0.4.1
+# 20261111
+# 0.4.2
 
 # Prerequisite: Ruby is installed, which it should be already!
 
@@ -24,16 +24,9 @@
 # 4. Make it cross-platform: OSX, Linux, and Windows, at least.
 # 5. Clean up the required libraries so that they are either gemified and/or reduced in number.
 
-# Changes since 0.4.0:
-# -/0: Fewer libraries in lib/, each the current version, none needing anything outside lib/.
-# 1. ~ lib/FileUtils/where.rb: taken from FileUtils/where 0.1.0, which no longer requires Platform/OS or File/self.basename_without_extname.
-# 2. ~ lib/Kernel/run.rb: taken from Kernel/run 0.3.1, which takes keywords and no longer requires Array/extract_optionsX.
-# 3. ~ lib/Thoran/Kernel/RequireGem/require_gem.rb: taken from Thoran::Kernel::RequireGem 0.1.0, which activates gem_name before requiring.
-# 4. - lib/Platform/
-# 5. - lib/File/
-# 6. - lib/Thoran/File/
-# 7. - Gemfile: gem 'ostruct', which only Platform/OS/OSX's requirements loaded.
-# 8. ~ How to use: + what to do where macOS won't open YaCy.app, since YaCy's disk image is unsigned; + the local network prompt for java; the second step 3 is step 4.
+# Changes since 0.4.1:
+# -/0: + README.md
+# 1. + README.md: Description, Installation, Dependencies, Usage, Notes, Tests and Contributing.
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
