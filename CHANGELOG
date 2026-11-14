@@ -2,6 +2,38 @@
 
 ## 20261111
 
+0.5.0: Install YaCy on Linux as well as macOS, from YaCy's tarball, with Java from Homebrew or the distribution's package manager.
+
+1. + lib/Linux/PackageManager.rb: Linux::PackageManager finds which of brew, apt-get, dnf, yum, pacman, zypper and apk is on PATH, asks whether a package is installed, installs one with sudo unless root or brew, and names each one's Java, 17 or later. brew is passed over as root, since Homebrew won't run as root.
+2. + lib/Tarball.rb: Tarball extracts a tarball into a directory, made where it isn't there, giving tar its arguments without a shell.
+3. + test/Linux/PackageManager_test.rb
+4. + test/Tarball_test.rb
+5. + macos?(), linux?()
+6. ~ require_gem 'MacOS/Dmg': On macOS only.
+7. + require 'Linux/PackageManager', require 'Tarball'
+8. ~ homebrew_paths(): + /home/linuxbrew/.linuxbrew/bin/brew, where Homebrew installs itself on Linux.
+9. + homebrew_installed_but_not_on_path?()
+10. + package_manager()
+11. + java_installed?()
+12. + install_java(): Stops where no package manager is found.
+13. + latest_linux_yacy_filename(): The last .tar.gz on download.yacy.net, not its .sig.
+14. + url_for_latest_linux_yacy_file()
+15. + linux_download_dir(): ~/Downloads, made where there isn't one.
+16. + tarball_filename()
+17. + download_linux_yacy()
+18. + data_home(): XDG_DATA_HOME, or else ~/.local/share.
+19. + linux_yacy_dir()
+20. + linux_yacy_installed?()
+21. + unpack_linux_yacy()
+22. + install_linux_yacy()
+23. + linux_yacy_running?(): Where DATA/yacy.running is, as YaCy's stopYACY.sh takes it. startYACY.sh run twice would start a second YaCy which can't have the port.
+24. + start_linux_yacy(): Runs startYACY.sh, which starts YaCy in the background.
+25. ~ main(): The macOS steps on macOS, unchanged; the Linux steps on Linux, putting Homebrew on PATH first where it is installed but not on PATH; and stops anywhere else.
+26. ~ test/install_yacy.rb: The Linux steps, and main() on each platform, are tested.
+27. ~ README.md: Description, Installation, Dependencies, Usage, Notes and Tests cover Linux.
+28. ~ bin/install_yacy: /0.4.2/0.5.0/
+
+
 0.4.2: + README.md, LICENSE and PROPOSED.md, which take over from the header's How to use and Todo.
 
 1. + README.md: Description, Installation, Dependencies, Usage, Notes, Tests, Contributing and License.
