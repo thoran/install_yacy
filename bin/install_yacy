@@ -1,19 +1,11 @@
 #!/usr/bin/env ruby
 # install_yacy
 
-# 20261111
-# 0.5.0
+# 20261121
+# 0.6.0
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
-
-require 'fileutils'
-require 'FileUtils/which'
-require 'Kernel/require_gem'
-require 'Kernel/run'
-require 'Linux/PackageManager'
-require 'Tarball'
-require 'open-uri'
 
 def macos?
   RUBY_PLATFORM.include?('darwin')
@@ -23,229 +15,27 @@ def linux?
   RUBY_PLATFORM.include?('linux')
 end
 
-require_gem 'MacOS/Dmg', gem_name: 'macos.rb' if macos?
-require_gem 'nokogiri'
-
-Linux::PackageManager.verbose = true
-Tarball.verbose = true
-
-def homebrew_paths
-  %w{/opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew}
-end
-
-def brew_path
-  FileUtils.which('brew') || homebrew_paths.detect{|path| File.executable?(path)}
-end
-
-def homebrew_installed?
-  !!brew_path
-end
-
-def homebrew_on_path?
-  !!FileUtils.which('brew')
-end
-
-def put_homebrew_on_path
-  ENV['PATH'] = "#{File.dirname(brew_path)}:#{ENV['PATH']}"
-end
-
-def openjdk_installed?
-  system('brew list --versions openjdk', out: File::NULL, err: File::NULL)
-end
-
-def openjdk_jdk_path
-  File.join(`brew --prefix openjdk`.chomp, 'libexec', 'openjdk.jdk')
-end
-
-def java_virtual_machine_link
-  '/Library/Java/JavaVirtualMachines/openjdk.jdk'
-end
-
-def openjdk_linked?
-  File.exist?(java_virtual_machine_link)
-end
-
-def yacy_installed?
-  File.exist?("/Users/#{current_user}/Applications/YaCy.app") ||
-    File.exist?("/Applications/YaCy.app")
-end
-
-def install_homebrew
-  run('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"', show: true)
-end
-
-def link_openjdk
-  run("sudo ln -sfn #{openjdk_jdk_path} #{java_virtual_machine_link}", show: true)
-end
-
-def install_openjdk
-  run('brew install openjdk', show: true)
-end
-
-def latest_macos_yacy_filename
-  @latest_macos_yacy_filename ||=(
-    doc = Nokogiri.HTML(URI.open('https://download.yacy.net'))
-    doc.search('a').map{|e| e[:href]}.reverse.detect{|e| e =~ /\.dmg/}
+def platform
+  @platform ||= (
+    if macos?
+      require 'InstallYaCy/MacOS'
+      InstallYaCy::MacOS
+    elsif linux?
+      require 'InstallYaCy/Linux'
+      Linux::PackageManager.verbose = true
+      Tarball.verbose = true
+      InstallYaCy::Linux
+    else
+      abort("install_yacy installs YaCy on macOS and Linux only.")
+    end
   )
-end
-
-def url_for_latest_macos_yacy_file
-  "https://download.yacy.net/#{latest_macos_yacy_filename}"
-end
-
-def current_user
-  ENV['USER']
-end
-
-def yacy_already_downloaded?
-  File.exist?(dmg_filename)
-end
-
-def download(url)
-  filename = File.basename(url)
-  File.open(filename, 'wb') do |file|
-    file.write(URI.open(url).read)
-  end
-end
-
-def download_dir
-  "/Users/#{current_user}/Downloads"
-end
-
-def download_yacy
-  Dir.chdir(download_dir)
-  download(url_for_latest_macos_yacy_file) unless yacy_already_downloaded?
-end
-
-def dmg_filename
-  "#{download_dir}/#{latest_macos_yacy_filename}"
-end
-
-def mount_yacy_image
-  MacOS::Dmg.mount(dmg_filename)
-end
-
-def yacy_volume_name
-  'YaCy'
-end
-
-def yacy_app_on_volume
-  "/Volumes/#{yacy_volume_name}/YaCy.app"
-end
-
-def copy_yacy_to_applications_dir
-  if Dir.exist?("/Users/#{current_user}/Applications")
-    FileUtils.cp_r(yacy_app_on_volume, "/Users/#{current_user}/Applications/YaCy.app")
-  else
-    FileUtils.cp_r(yacy_app_on_volume, '/Applications/YaCy.app')
-  end
-end
-
-def unmount_yacy_image
-  MacOS::Dmg.unmount(yacy_volume_name)
-end
-
-def install_yacy
-  download_yacy
-  mount_yacy_image
-  copy_yacy_to_applications_dir
-  unmount_yacy_image
-end
-
-def start_yacy
-  run("open -a 'YaCy'", show: true)
-  # run('open http://localhost:8090', show: true) # This command is not necessary because `open -a YaCy` also does `open http://localhost:8090`, though I'd probably prefer it didn't.
-end
-
-def homebrew_installed_but_not_on_path?
-  homebrew_installed? && !homebrew_on_path?
-end
-
-def package_manager
-  @package_manager ||= Linux::PackageManager.new
-end
-
-def java_installed?
-  !!FileUtils.which('java')
-end
-
-def install_java
-  abort("No package manager was found to install Java with. Install Java 17 or later, and run install_yacy again.") unless package_manager.command
-  package_manager.install(package_manager.java_package)
-end
-
-def latest_linux_yacy_filename
-  @latest_linux_yacy_filename ||=(
-    doc = Nokogiri.HTML(URI.open('https://download.yacy.net'))
-    doc.search('a').map{|e| e[:href]}.reverse.detect{|e| e =~ /\.tar\.gz$/}
-  )
-end
-
-def url_for_latest_linux_yacy_file
-  "https://download.yacy.net/#{latest_linux_yacy_filename}"
-end
-
-def linux_download_dir
-  File.join(Dir.home, 'Downloads')
-end
-
-def tarball_filename
-  File.join(linux_download_dir, latest_linux_yacy_filename)
-end
-
-def download_linux_yacy
-  FileUtils.mkdir_p(linux_download_dir)
-  Dir.chdir(linux_download_dir)
-  download(url_for_latest_linux_yacy_file) unless File.exist?(tarball_filename)
-end
-
-def data_home
-  ENV['XDG_DATA_HOME'] || File.join(Dir.home, '.local', 'share')
-end
-
-def linux_yacy_dir
-  File.join(data_home, 'yacy')
-end
-
-def linux_yacy_installed?
-  File.exist?(File.join(linux_yacy_dir, 'startYACY.sh'))
-end
-
-def unpack_linux_yacy
-  Tarball.extract(tarball_filename, to: data_home)
-end
-
-def install_linux_yacy
-  download_linux_yacy
-  unpack_linux_yacy
-end
-
-def linux_yacy_running?
-  File.exist?(File.join(linux_yacy_dir, 'DATA', 'yacy.running'))
-end
-
-def start_linux_yacy
-  run(File.join(linux_yacy_dir, 'startYACY.sh'), show: true)
 end
 
 def main
-  if macos?
-    install_homebrew unless homebrew_installed?
-    put_homebrew_on_path unless homebrew_on_path?
-    install_openjdk unless openjdk_installed?
-    link_openjdk unless openjdk_linked?
-    install_yacy unless yacy_installed?
-    start_yacy
-  elsif linux?
-    put_homebrew_on_path if homebrew_installed_but_not_on_path?
-    install_java unless java_installed?
-    install_linux_yacy unless linux_yacy_installed?
-    start_linux_yacy unless linux_yacy_running?
-  else
-    abort("install_yacy installs YaCy on macOS and Linux only.")
-  end
+  platform.put_homebrew_on_path if platform.homebrew_installed_but_not_on_path?
+  platform.install_java unless platform.java_installed?
+  platform.install_yacy unless platform.yacy_installed?
+  platform.start_yacy
 end
 
-if $0 == __FILE__
-  main
-end
+main

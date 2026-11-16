@@ -1,5 +1,29 @@
 # install_yacy/CHANGELOG
 
+## 20261121
+
+0.6.0: The macOS and Linux steps each go in a module of their own, with the same steps, chosen in one place.
+
+1. + lib/InstallYaCy/Download.rb: InstallYaCy::Download finds the latest file on download.yacy.net of a kind, and downloads it into ~/Downloads, made where there isn't one, unless it's there already.
+2. + lib/InstallYaCy/Homebrew.rb: InstallYaCy::Homebrew finds brew on PATH or where the module using it says Homebrew installs itself, and puts it on PATH.
+3. + lib/InstallYaCy/MacOS.rb: InstallYaCy::MacOS holds the macOS steps, taken from bin/install_yacy.
+4. + lib/InstallYaCy/Linux.rb: InstallYaCy::Linux holds the Linux steps, taken from bin/install_yacy.
+5. ~ InstallYaCy::Linux.homebrew_paths(): + ~/.linuxbrew/bin/brew, where Homebrew installs itself where it can't write to /home/linuxbrew. The macOS paths are no longer looked in on Linux, nor the Linux one on macOS.
+6. ~ InstallYaCy::MacOS: ~/Downloads and ~/Applications are found from the home directory rather than from USER.
+7. ~ InstallYaCy::Linux.start_yacy(): Does nothing where YaCy is running, as open -a does on macOS, so as main() needn't ask.
+8. + test/InstallYaCy/MacOS_test.rb
+9. + test/InstallYaCy/Linux_test.rb
+10. ~ bin/install_yacy: - Each step's method, now in InstallYaCy::MacOS or InstallYaCy::Linux.
+11. ~ bin/install_yacy: + platform(): The module for the OS, and the only place the OS is asked.
+12. ~ main(): The same steps on each OS, each taken by platform().
+13. ~ bin/install_yacy: - The self-run wrapper for the call to main.
+14. - test/install_yacy.rb
+15. ~ lib/Linux/PackageManager.rb: No blank line opens or closes the class's body.
+16. ~ lib/Tarball.rb: No blank line opens or closes the class's body.
+17. ~ README.md: Installation and Tests cover lib/InstallYaCy, and Description ~/.linuxbrew.
+18. ~ bin/install_yacy: /0.5.0/0.6.0/
+
+
 ## 20261111
 
 0.5.0: Install YaCy on Linux as well as macOS, from YaCy's tarball, with Java from Homebrew or the distribution's package manager.

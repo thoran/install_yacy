@@ -8,7 +8,6 @@ require 'shellwords'
 
 module Linux
   class PackageManager
-
     class << self
       attr_accessor :verbose
 
@@ -123,6 +122,5 @@ module Linux
     def java_package
       PackageManager.java_package(command: @command)
     end
-
   end
 end

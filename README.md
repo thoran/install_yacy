@@ -14,7 +14,7 @@ YaCy runs on Java and ships for macOS as a disk image, so getting it going by ha
 
 On Linux, YaCy ships as a tarball, and `install_yacy`:
 
-1. Puts Homebrew on `PATH` where it is installed, in `/home/linuxbrew/.linuxbrew`, but isn't on `PATH`.
+1. Puts Homebrew on `PATH` where it is installed, in `/home/linuxbrew/.linuxbrew` or `~/.linuxbrew`, but isn't on `PATH`.
 2. Installs Java, where there is no `java` on `PATH`: OpenJDK with Homebrew where Homebrew is installed, and otherwise a headless Java, 17 or later, with whichever of `apt-get`, `dnf`, `yum`, `pacman`, `zypper` or `apk` there is. This last is the step which asks for a password, unless run as root.
 3. Downloads the latest YaCy tarball from [download.yacy.net](https://download.yacy.net) into `~/Downloads`, unless it is there already, and unpacks it into `~/.local/share/yacy`, or `$XDG_DATA_HOME/yacy` where `XDG_DATA_HOME` is set.
 4. Runs YaCy's `startYACY.sh`, which starts YaCy in the background, serving its search page at http://localhost:8090, unless YaCy is running already.
@@ -49,7 +49,7 @@ $ sudo apk add ruby ruby-nokogiri
 $ git clone https://github.com/thoran/install_yacy.git
 ```
 
-The script puts its own `../lib` on the load path, so a clone kept whole is all it needs. On Linux, `lib/Linux` holds `Linux::PackageManager`, and `lib/Tarball.rb` holds `Tarball`, which need nothing beyond Ruby's standard library.
+The script puts its own `../lib` on the load path, so a clone kept whole is all it needs. `lib/InstallYaCy` holds the steps, those for macOS in `InstallYaCy::MacOS` and those for Linux in `InstallYaCy::Linux`, each with the same steps, and what both share in `InstallYaCy::Download` and `InstallYaCy::Homebrew`. On Linux, `lib/Linux` holds `Linux::PackageManager`, and `lib/Tarball.rb` holds `Tarball`, which need nothing beyond Ruby's standard library.
 
 ## Dependencies
 
@@ -92,7 +92,8 @@ On Linux:
 
 ```shell
 $ bundle install
-$ bundle exec ruby test/install_yacy.rb
+$ bundle exec ruby test/InstallYaCy/MacOS_test.rb
+$ bundle exec ruby test/InstallYaCy/Linux_test.rb
 $ bundle exec ruby test/Linux/PackageManager_test.rb
 $ bundle exec ruby test/Tarball_test.rb
 ```

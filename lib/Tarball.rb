@@ -7,7 +7,6 @@
 require 'fileutils'
 
 class Tarball
-
   class << self
     attr_accessor :verbose
 
@@ -43,5 +42,4 @@ class Tarball
   def extract
     Tarball.extract(@path_to_tarball, to: @to)
   end
-
 end
