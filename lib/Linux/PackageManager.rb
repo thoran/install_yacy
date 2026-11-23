@@ -1,8 +1,8 @@
 # Linux/PackageManager.rb
 # Linux::PackageManager
 
-# 20261111
-# 0.0.0
+# 20261123
+# 0.1.0
 
 require 'shellwords'
 
@@ -53,9 +53,9 @@ module Linux
         }
       end
 
-      # The first of the package managers known which is on PATH, and can be run as whoever this is, or nil where there is none.
-      def command
-        commands.keys.detect{|command| on_path?(command) && !(commands[command][:as_user] && root?)}
+      # The first of the package managers known, other than those in except, which is on PATH, and can be run as whoever this is, or nil where there is none.
+      def command(except: [])
+        (commands.keys - except).detect{|command| on_path?(command) && !(commands[command][:as_user] && root?)}
       end
 
       def installed?(package, command: self.command)

@@ -1,11 +1,16 @@
 #!/usr/bin/env ruby
 # install_yacy
 
-# 20261121
-# 0.6.0
+# 20261123
+# 0.7.0
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
+
+require 'Kernel/require_gem'
+require 'yaml'
+
+require_gem 'switches.rb'
 
 def macos?
   RUBY_PLATFORM.include?('darwin')
@@ -19,6 +24,7 @@ def platform
   @platform ||= (
     if macos?
       require 'InstallYaCy/MacOS'
+      Tarball.verbose = true
       InstallYaCy::MacOS
     elsif linux?
       require 'InstallYaCy/Linux'
@@ -31,11 +37,89 @@ def platform
   )
 end
 
-def main
-  platform.put_homebrew_on_path if platform.homebrew_installed_but_not_on_path?
-  platform.install_java unless platform.java_installed?
-  platform.install_yacy unless platform.yacy_installed?
+def usage
+  puts "install_yacy - Installs YaCy, and Java for it where it's wanted, and starts YaCy."
+  puts
+  puts "Usage: install_yacy [--java=SOURCE] [--install-homebrew]"
+  puts
+  puts "Options:"
+  puts "  --java=SOURCE       Where Java comes from: #{platform.java_choices.join(', ')}, or a path to a java (default: auto)"
+  puts "  --install-homebrew  Install Homebrew without asking, where --java=homebrew and it isn't installed"
+  puts "  -h, --help          Show this help"
+  puts
+  puts "Each may be set in #{config_path} instead, as java: and install_homebrew:."
+end
+
+def switches
+  @switches ||= Switches.new do |s|
+    s.set!(:java){'Where Java comes from'}
+    s.boolean(:install_homebrew){'Install Homebrew without asking'}
+    s.perform(:h, :help?) do
+      usage
+      exit
+    end
+  end
+rescue OptionParser::ParseError => e
+  abort("#{e.message}. Run install_yacy --help for the options.")
+end
+
+def config_path
+  File.join(Dir.home, '.config', 'install_yacy', 'config.yaml')
+end
+
+def config
+  @config ||= File.exist?(config_path) ? YAML.safe_load_file(config_path) || {} : {}
+end
+
+def java
+  switches.java || config['java'] || 'auto'
+end
+
+def install_homebrew?
+  switches.install_homebrew? || config['install_homebrew'] || false
+end
+
+def validate_java
+  platform.check_java(java)
+rescue ArgumentError => e
+  abort(e.message)
+end
+
+def homebrew_installed_but_not_on_path?
+  platform.homebrew_installed_but_not_on_path?
+end
+
+def put_homebrew_on_path
+  platform.put_homebrew_on_path
+end
+
+def java_installed?
+  platform.java_installed?(java)
+end
+
+def install_java
+  platform.install_java(java, allow_homebrew_install: install_homebrew?)
+end
+
+def yacy_installed?
+  platform.yacy_installed?
+end
+
+def install_yacy
+  platform.install_yacy
+end
+
+def start_yacy
   platform.start_yacy
+end
+
+def main
+  switches
+  validate_java
+  put_homebrew_on_path if homebrew_installed_but_not_on_path?
+  install_java unless java_installed?
+  install_yacy unless yacy_installed?
+  start_yacy
 end
 
 main

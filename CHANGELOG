@@ -1,5 +1,38 @@
 # install_yacy/CHANGELOG
 
+## 20261123
+
+0.7.0: --java chooses where Java comes from, and where nothing is chosen, Java already installed is used, else a package manager already installed, else Adoptium's JRE, rather than Homebrew being installed.
+
+1. + lib/InstallYaCy/Java.rb: InstallYaCy::Java takes auto, existing, a package manager, adoptium or a path to a java, and asks before installing Homebrew, stopping where there's no terminal to ask at.
+2. + lib/InstallYaCy/Adoptium.rb: InstallYaCy::Adoptium downloads Adoptium's Temurin JRE of the latest long-term release, checks it against Adoptium's checksum, and unpacks it.
+3. ~ InstallYaCy::Homebrew: + install_homebrew(), from InstallYaCy::MacOS, Homebrew's installer being the same on Linux.
+4. ~ InstallYaCy::MacOS: + java_sources(): existing, homebrew, macports and adoptium.
+5. ~ InstallYaCy::MacOS: /java_installed?/homebrew_java_installed?/, /install_java/install_homebrew_java/
+6. + InstallYaCy::MacOS.existing_java_installed?(): Where java_home finds Java 17 or later, as YaCy.app does by way of /usr/bin/java.
+7. ~ InstallYaCy::MacOS.link_openjdk(): Into ~/Library/Java/JavaVirtualMachines, without sudo, rather than /Library/Java/JavaVirtualMachines with it. java_home looks in both.
+8. ~ InstallYaCy::MacOS.openjdk_linked?(): Linked into either.
+9. + InstallYaCy::MacOS: macports_path(), macports_installed?(), macports_java_installed?(), install_macports_java(): MacPorts' openjdk25, with sudo, stopping where MacPorts isn't installed.
+10. + InstallYaCy::MacOS: path_java_installed?(), install_path_java(): A java within a bundle, which is linked into ~/Library/Java/JavaVirtualMachines by the path as given, so as a link through Homebrew's opt directory outlasts an upgrade.
+11. ~ InstallYaCy::Linux: + java_sources(): existing, homebrew, system and adoptium.
+12. ~ InstallYaCy::Linux: /java_installed?/existing_java_installed?/: Java 17 or later on PATH, or Adoptium's JRE, rather than any java on PATH.
+13. ~ InstallYaCy::Linux: /package_manager/system_package_manager/, /install_java/install_system_java/: The distribution's package manager, not Homebrew.
+14. + InstallYaCy::Linux: homebrew_java_installed?(), install_homebrew_java(): Homebrew's openjdk, stopping as root, which Homebrew refuses.
+15. + InstallYaCy::Linux: path_java_installed?(), install_path_java(): A java, which is put on PATH.
+16. ~ InstallYaCy::Linux.start_yacy(): Adoptium's JRE is put on PATH where there's no other Java 17 or later on it, since startYACY.sh finds Java with which.
+17. ~ lib/Linux/PackageManager.rb: Linux::PackageManager.command(): + except:.
+18. ~ bin/install_yacy: + --java, --install-homebrew, -h and --help, with switches.rb, and java: and install_homebrew: in ~/.config/install_yacy/config.yaml, the switch winning where both are given.
+19. ~ Gemfile: + gem 'switches.rb', - # gem 'mocha', which nothing uses.
+20. ~ bin/install_yacy: + homebrew_installed_but_not_on_path?(), put_homebrew_on_path(), java_installed?(), install_java(), yacy_installed?(), install_yacy(), start_yacy(), each taken by platform(), java_installed?() and install_java() with the source chosen, and install_java() whether Homebrew may be installed.
+21. ~ main(): Reads as the steps and the condition for each, as before 0.6.0, rather than as calls on platform().
+22. ~ bin/install_yacy: Made executable.
+23. ~ test/InstallYaCy/MacOS_test.rb, test/InstallYaCy/Linux_test.rb: Each source is tested, and which auto comes to.
+24. ~ test/Linux/PackageManager_test.rb: The except: of command() is tested.
+25. ~ README.md: Description has a Java section; Installation, Homebrew; Dependencies, switches.rb; Usage, the options; and Notes, java_home and Adoptium's updates.
+26. ~ PROPOSED.md: - The formula and optional Homebrew items, each settled. Uninstalling names where Java now goes.
+27. ~ bin/install_yacy: /0.6.0/0.7.0/
+
+
 ## 20261121
 
 0.6.0: The macOS and Linux steps each go in a module of their own, with the same steps, chosen in one place.

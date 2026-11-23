@@ -1,10 +1,11 @@
 # InstallYaCy/Homebrew.rb
 # InstallYaCy::Homebrew
 
-# 20261116
-# 0.0.0
+# 20261123
+# 0.1.0
 
 require 'FileUtils/which'
+require 'Kernel/run'
 
 module InstallYaCy
   # Where Homebrew installs itself differs by OS, so each module using this one gives its own homebrew_paths.
@@ -27,6 +28,11 @@ module InstallYaCy
 
     def put_homebrew_on_path
       ENV['PATH'] = "#{File.dirname(brew_path)}:#{ENV['PATH']}"
+    end
+
+    # Homebrew's own installer, which is the same on macOS and Linux.
+    def install_homebrew
+      run('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"', show: true)
     end
   end
 end

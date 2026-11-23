@@ -1,12 +1,15 @@
 # InstallYaCy/MacOS.rb
 # InstallYaCy::MacOS
 
-# 20261116
-# 0.0.0
+# 20261123
+# 0.1.0
 
 require 'fileutils'
+require 'FileUtils/which'
+require 'InstallYaCy/Adoptium'
 require 'InstallYaCy/Download'
 require 'InstallYaCy/Homebrew'
+require 'InstallYaCy/Java'
 require 'Kernel/require_gem'
 require 'Kernel/run'
 
@@ -16,15 +19,34 @@ module InstallYaCy
   module MacOS
     include InstallYaCy::Download
     include InstallYaCy::Homebrew
+    include InstallYaCy::Java
+    include InstallYaCy::Adoptium
     extend self
+
+    def java_sources
+      %w{existing homebrew macports adoptium}
+    end
+
+    def package_manager_installed?(source)
+      case source
+      when 'homebrew' then homebrew_installed?
+      when 'macports' then macports_installed?
+      end
+    end
+
+    # YaCy.app is started by open, and so finds Java with java_home, by way of /usr/bin/java, whatever is on PATH.
+    def existing_java_installed?
+      system('/usr/libexec/java_home', '-v', "#{MINIMUM_JAVA_VERSION}+", out: File::NULL, err: File::NULL)
+    end
+
+    # java_home looks here as well as in /Library/Java/JavaVirtualMachines, and a user can write here without sudo.
+    def user_java_virtual_machines_dir
+      File.join(Dir.home, 'Library', 'Java', 'JavaVirtualMachines')
+    end
 
     # Homebrew installs itself into /opt/homebrew on Apple silicon and /usr/local on Intel.
     def homebrew_paths
       %w{/opt/homebrew/bin/brew /usr/local/bin/brew}
-    end
-
-    def install_homebrew
-      run('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"', show: true)
     end
 
     def openjdk_installed?
@@ -40,26 +62,98 @@ module InstallYaCy
     end
 
     def java_virtual_machine_link
+      File.join(user_java_virtual_machines_dir, 'openjdk.jdk')
+    end
+
+    # Where install_yacy linked it before 0.7.0, with sudo.
+    def system_java_virtual_machine_link
       '/Library/Java/JavaVirtualMachines/openjdk.jdk'
     end
 
     def openjdk_linked?
-      File.exist?(java_virtual_machine_link)
+      File.exist?(java_virtual_machine_link) || File.exist?(system_java_virtual_machine_link)
     end
 
     def link_openjdk
-      run("sudo ln -sfn #{openjdk_jdk_path} #{java_virtual_machine_link}", show: true)
+      FileUtils.mkdir_p(user_java_virtual_machines_dir)
+      FileUtils.rm_f(java_virtual_machine_link)
+      File.symlink(openjdk_jdk_path, java_virtual_machine_link)
     end
 
-    def java_installed?
+    def homebrew_java_installed?
       homebrew_installed? && openjdk_installed? && openjdk_linked?
     end
 
-    def install_java
-      install_homebrew unless homebrew_installed?
+    def install_homebrew_java(allow_homebrew_install: false)
+      unless homebrew_installed?
+        confirm_homebrew_install(allow_homebrew_install: allow_homebrew_install)
+        announce("installing Homebrew.")
+        install_homebrew
+      end
       put_homebrew_on_path unless homebrew_on_path?
-      install_openjdk unless openjdk_installed?
+      unless openjdk_installed?
+        announce("installing Homebrew's openjdk.")
+        install_openjdk
+      end
       link_openjdk unless openjdk_linked?
+    end
+
+    def macports_path
+      FileUtils.which('port') || ('/opt/local/bin/port' if File.executable?('/opt/local/bin/port'))
+    end
+
+    def macports_installed?
+      !!macports_path
+    end
+
+    def macports_java_port
+      'openjdk25'
+    end
+
+    def macports_java_installed?
+      macports_installed? && !IO.popen([macports_path, '-q', 'installed', macports_java_port], err: File::NULL, &:read).strip.empty?
+    end
+
+    def install_macports_java
+      abort("MacPorts isn't installed. Install it from https://www.macports.org/install.php, or choose another --java.") unless macports_installed?
+      announce("installing MacPorts' #{macports_java_port}, with sudo.")
+      run("sudo #{macports_path} install #{macports_java_port}", show: true)
+    end
+
+    def adoptium_os
+      'mac'
+    end
+
+    def adoptium_dir
+      user_java_virtual_machines_dir
+    end
+
+    def adoptium_java_path
+      %w{Contents Home bin java}
+    end
+
+    # The bundle a java is in, where it's in one, as java_home needs it to be. The path as given is kept where it's in a bundle itself, so as a link through Homebrew's opt directory outlasts an upgrade, and is otherwise followed to where it leads.
+    def java_bundle(java)
+      bundle = %r{\A(.+)/Contents/Home/bin/java\z}
+      File.expand_path(java)[bundle, 1] || File.realpath(java)[bundle, 1]
+    rescue SystemCallError
+      nil
+    end
+
+    def java_bundle_link(java)
+      File.join(user_java_virtual_machines_dir, File.basename(java_bundle(java)))
+    end
+
+    def path_java_installed?(java)
+      suitable_java?(java) && !!java_bundle(java) && (File.basename(File.dirname(java_bundle(java))) == 'JavaVirtualMachines' || File.exist?(java_bundle_link(java)))
+    end
+
+    def install_path_java(java)
+      abort("#{java} isn't Java #{MINIMUM_JAVA_VERSION} or later.") unless suitable_java?(java)
+      abort("#{java} isn't in a Java bundle, ending in Contents/Home/bin/java, which java_home needs for YaCy.app to find it.") unless java_bundle(java)
+      announce("linking #{java_bundle(java)} into #{user_java_virtual_machines_dir}.")
+      FileUtils.mkdir_p(user_java_virtual_machines_dir)
+      File.symlink(java_bundle(java), java_bundle_link(java))
     end
 
     def latest_yacy_filename

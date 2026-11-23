@@ -39,6 +39,14 @@ describe Linux::PackageManager do
       with_path('apt-get', 'brew'){expect(Process.stub(:uid, 1000){Linux::PackageManager.command}).must_equal 'brew'}
     end
 
+    it "is the other, where brew is excepted" do
+      with_path('apt-get', 'brew'){expect(Process.stub(:uid, 1000){Linux::PackageManager.command(except: ['brew'])}).must_equal 'apt-get'}
+    end
+
+    it "is nil where the only one there is excepted" do
+      with_path('brew'){expect(Process.stub(:uid, 1000){Linux::PackageManager.command(except: ['brew'])}).must_be_nil}
+    end
+
     it "isn't brew where root" do
       with_path('apt-get', 'brew'){expect(Process.stub(:uid, 0){Linux::PackageManager.command}).must_equal 'apt-get'}
       with_path('brew'){expect(Process.stub(:uid, 0){Linux::PackageManager.command}).must_be_nil}

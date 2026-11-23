@@ -91,36 +91,198 @@ describe InstallYaCy::Linux do
     end
   end
 
-  describe ".java_installed?" do
-    it "is true where java is on PATH" do
-      FileUtils.stub(:which, '/usr/bin/java') do
-        expect(InstallYaCy::Linux.java_installed?).must_equal true
+  describe ".java_source" do
+    before do
+      InstallYaCy::Linux.instance_variable_set(:@system_package_manager, nil)
+    end
+
+    it "is existing, for auto, where Java 17 or later is on PATH" do
+      stub_steps({existing_java_installed?: true}) do
+        expect(InstallYaCy::Linux.java_source('auto')).must_equal 'existing'
       end
     end
 
-    it "is false where java isn't on PATH" do
-      FileUtils.stub(:which, nil) do
-        expect(InstallYaCy::Linux.java_installed?).must_equal false
+    it "is homebrew, for auto, where there's no Java but Homebrew is there" do
+      stub_steps({existing_java_installed?: false, homebrew_installed?: true, root?: false, system_package_manager: Linux::PackageManager.new(command: 'apt-get')}) do
+        expect(InstallYaCy::Linux.java_source('auto')).must_equal 'homebrew'
+      end
+    end
+
+    it "is system, for auto, where there's no Java and Homebrew is there but this is root" do
+      stub_steps({existing_java_installed?: false, homebrew_installed?: true, root?: true, system_package_manager: Linux::PackageManager.new(command: 'apt-get')}) do
+        expect(InstallYaCy::Linux.java_source('auto')).must_equal 'system'
+      end
+    end
+
+    it "is system, for auto, where there's no Java and no Homebrew" do
+      stub_steps({existing_java_installed?: false, homebrew_installed?: false, system_package_manager: Linux::PackageManager.new(command: 'dnf')}) do
+        expect(InstallYaCy::Linux.java_source('auto')).must_equal 'system'
+      end
+    end
+
+    it "is adoptium, for auto, where there's no Java and no package manager" do
+      stub_steps({existing_java_installed?: false, homebrew_installed?: false, system_package_manager: nil}) do
+        expect(InstallYaCy::Linux.java_source('auto')).must_equal 'adoptium'
+      end
+    end
+
+    it "is the source chosen, whatever is there" do
+      %w{existing homebrew system adoptium}.each do |source|
+        expect(InstallYaCy::Linux.java_source(source)).must_equal source
+      end
+    end
+
+    it "raises for a source unknown on Linux" do
+      expect{InstallYaCy::Linux.java_source('macports')}.must_raise ArgumentError
+    end
+  end
+
+  describe ".existing_java_installed?" do
+    it "is true where java on PATH is 17 or later" do
+      stub_steps({java_on_path: '/usr/bin/java', adoptium_java_installed?: false}) do
+        File.stub(:executable?, true) do
+          InstallYaCy::Linux.stub(:java_version, 21){expect(InstallYaCy::Linux.existing_java_installed?).must_equal true}
+        end
+      end
+    end
+
+    it "is false where java on PATH is older than 17, and there's no JRE from Adoptium" do
+      stub_steps({java_on_path: '/usr/bin/java', adoptium_java_installed?: false}) do
+        File.stub(:executable?, true) do
+          InstallYaCy::Linux.stub(:java_version, 11){expect(InstallYaCy::Linux.existing_java_installed?).must_equal false}
+        end
+      end
+    end
+
+    it "is true where there's no java on PATH, but there's a JRE from Adoptium" do
+      stub_steps({java_on_path: nil, adoptium_java_installed?: true}) do
+        expect(InstallYaCy::Linux.existing_java_installed?).must_equal true
       end
     end
   end
 
-  describe ".install_java" do
+  describe ".system_package_manager" do
+    before do
+      InstallYaCy::Linux.instance_variable_set(:@system_package_manager, nil)
+    end
+
+    after do
+      InstallYaCy::Linux.instance_variable_set(:@system_package_manager, nil)
+    end
+
+    it "is the distribution's, not Homebrew, where both are there" do
+      Linux::PackageManager.stub(:command, ->(except: []){(%w{brew apt-get} - except).first}) do
+        expect(InstallYaCy::Linux.system_package_manager.command).must_equal 'apt-get'
+      end
+    end
+
+    it "is nil where only Homebrew is there" do
+      Linux::PackageManager.stub(:command, ->(except: []){(%w{brew} - except).first}) do
+        expect(InstallYaCy::Linux.system_package_manager).must_be_nil
+      end
+    end
+  end
+
+  describe ".install_system_java" do
     it "installs the package manager's Java" do
       commands = []
-      InstallYaCy::Linux.stub(:package_manager, Linux::PackageManager.new(command: 'dnf')) do
+      InstallYaCy::Linux.stub(:system_package_manager, Linux::PackageManager.new(command: 'dnf')) do
         Linux::PackageManager.stub(:system, ->(*command, **options){commands << command; true}) do
-          Process.stub(:uid, 0){capture_io{InstallYaCy::Linux.install_java}}
+          out, _ = Process.stub(:uid, 0){capture_io{InstallYaCy::Linux.install_system_java}}
+          expect(out).must_match /Java: installing java-headless with dnf\./
         end
       end
       expect(commands).must_equal [['dnf install -y java-headless']]
     end
 
     it "stops where no package manager is found" do
-      Linux::PackageManager.stub(:command, nil) do
-        InstallYaCy::Linux.stub(:package_manager, Linux::PackageManager.new) do
-          _, err = capture_io{expect{InstallYaCy::Linux.install_java}.must_raise SystemExit}
-          expect(err).must_match /Java 17 or later/
+      InstallYaCy::Linux.stub(:system_package_manager, nil) do
+        _, err = capture_io{expect{InstallYaCy::Linux.install_system_java}.must_raise SystemExit}
+        expect(err).must_match /Java 17 or later/
+      end
+    end
+  end
+
+  describe ".install_homebrew_java" do
+    it "stops as root, since Homebrew won't run as root" do
+      InstallYaCy::Linux.stub(:root?, true) do
+        _, err = capture_io{expect{InstallYaCy::Linux.install_homebrew_java}.must_raise SystemExit}
+        expect(err).must_match /won't run as root/
+      end
+    end
+
+    it "installs Homebrew's openjdk, without sudo" do
+      commands = []
+      stub_steps({root?: false, homebrew_installed?: true, homebrew_on_path?: true}) do
+        Linux::PackageManager.stub(:system, ->(*command, **options){commands << command; true}) do
+          Process.stub(:uid, 1000){capture_io{InstallYaCy::Linux.install_homebrew_java}}
+        end
+      end
+      expect(commands).must_equal [['brew install openjdk']]
+    end
+
+    it "stops, rather than installing Homebrew, where there's no terminal to ask at" do
+      calls = []
+      $stdin.stub(:tty?, false) do
+        stub_steps({root?: false, homebrew_installed?: false, install_homebrew: nil}, calls) do
+          _, err = capture_io{expect{InstallYaCy::Linux.install_homebrew_java}.must_raise SystemExit}
+          expect(err).must_match /--install-homebrew/
+        end
+      end
+      expect(calls).wont_include :install_homebrew
+    end
+  end
+
+  describe ".adoptium_os" do
+    it "is alpine-linux where Ruby is built on musl" do
+      InstallYaCy::Linux.stub(:musl?, true){expect(InstallYaCy::Linux.adoptium_os).must_equal 'alpine-linux'}
+    end
+
+    it "is linux otherwise" do
+      InstallYaCy::Linux.stub(:musl?, false){expect(InstallYaCy::Linux.adoptium_os).must_equal 'linux'}
+    end
+  end
+
+  describe ".install_adoptium_java" do
+    let(:jre_tarball){tarball_holding('jdk-25.0.5.1+2-jre/bin/java')}
+    let(:jre_link){'https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.5.1%2B2/OpenJDK25U-jre_x64_linux_hotspot_25.0.5.1_2.tar.gz'}
+
+    before do
+      InstallYaCy::Linux.instance_variable_set(:@latest_lts_java_version, nil)
+      InstallYaCy::Linux.instance_variable_set(:@adoptium_jre_package, nil)
+      stub_request(:get, 'https://api.adoptium.net/v3/info/available_releases').to_return(status: 200, body: {most_recent_lts: 25}.to_json)
+      stub_request(:get, %r{\Ahttps://api\.adoptium\.net/v3/assets/latest/25/hotspot\?.*os=(alpine-)?linux}).to_return(status: 200, body: [{binary: {package: {name: File.basename(jre_link), link: jre_link, size: 52_000_000, checksum: Digest::SHA256.hexdigest(jre_tarball)}}}].to_json)
+      stub_request(:get, jre_link).to_return(status: 200, body: jre_tarball)
+    end
+
+    it "unpacks Adoptium's JRE into yacy-jre in ~/.local/share" do
+      out, _ = capture_subprocess_io{InstallYaCy::Linux.install_adoptium_java}
+      expect(out).must_match /Java: installing Adoptium's Temurin 25 JRE into #{Regexp.escape(File.join(home, '.local', 'share', 'yacy-jre'))} \(52 MB\)\./
+      expect(InstallYaCy::Linux.adoptium_java).must_equal File.join(home, '.local', 'share', 'yacy-jre', 'jdk-25.0.5.1+2-jre', 'bin', 'java')
+    end
+  end
+
+  describe ".install_path_java" do
+    before do
+      @path = ENV['PATH']
+    end
+
+    after do
+      ENV['PATH'] = @path
+    end
+
+    it "puts the directory the java is in at the front of PATH" do
+      File.stub(:executable?, true) do
+        InstallYaCy::Linux.stub(:java_version, 21){capture_io{InstallYaCy::Linux.install_path_java('/opt/jdk-21/bin/java')}}
+      end
+      expect(ENV['PATH']).must_equal "/opt/jdk-21/bin:#{@path}"
+    end
+
+    it "stops for a java older than 17" do
+      File.stub(:executable?, true) do
+        InstallYaCy::Linux.stub(:java_version, 11) do
+          _, err = capture_io{expect{InstallYaCy::Linux.install_path_java('/opt/jdk-11/bin/java')}.must_raise SystemExit}
+          expect(err).must_match /isn't Java 17 or later/
         end
       end
     end
@@ -158,12 +320,29 @@ describe InstallYaCy::Linux do
   end
 
   describe ".start_yacy" do
+    before do
+      @path = ENV['PATH']
+    end
+
+    after do
+      ENV['PATH'] = @path
+    end
+
     it "runs startYACY.sh" do
       commands = []
-      InstallYaCy::Linux.stub(:run, ->(*command, **options){commands << command; true}) do
-        InstallYaCy::Linux.start_yacy
+      stub_steps({suitable_java?: true}) do
+        InstallYaCy::Linux.stub(:run, ->(*command, **options){commands << command; true}){InstallYaCy::Linux.start_yacy}
       end
       expect(commands).must_equal [[File.join(home, '.local', 'share', 'yacy', 'startYACY.sh')]]
+      expect(ENV['PATH']).must_equal @path
+    end
+
+    it "puts Adoptium's JRE on PATH first, where there's no other suitable Java there" do
+      java = File.join(home, '.local', 'share', 'yacy-jre', 'jdk-25.0.5.1+2-jre', 'bin', 'java')
+      stub_steps({suitable_java?: false, adoptium_java_installed?: true, adoptium_java: java}) do
+        InstallYaCy::Linux.stub(:run, ->(*command, **options){true}){InstallYaCy::Linux.start_yacy}
+      end
+      expect(ENV['PATH']).must_equal "#{File.dirname(java)}:#{@path}"
     end
 
     it "doesn't run startYACY.sh where YaCy is running" do
@@ -175,5 +354,25 @@ describe InstallYaCy::Linux do
       end
       expect(commands).must_equal []
     end
+  end
+
+  # A tarball holding an executable at path, in the directories path is in.
+  def tarball_holding(path)
+    io = StringIO.new
+    Zlib::GzipWriter.wrap(io) do |gzip|
+      Gem::Package::TarWriter.new(gzip) do |tar|
+        directories = File.dirname(path).split('/')
+        directories.each_index{|i| tar.mkdir(directories[0..i].join('/'), 0755)}
+        tar.add_file_simple(path, 0755, 10){|file| file.write("#!/bin/sh\n")}
+      end
+    end
+    io.string
+  end
+
+  # Stubs each step on InstallYaCy::Linux to answer as given, recording the order they're called in.
+  def stub_steps(steps, calls = [], &block)
+    steps.reduce(block) do |inner, (name, answer)|
+      ->{InstallYaCy::Linux.stub(name, ->(*, **){calls << name; answer}){inner.call}}
+    end.call
   end
 end
