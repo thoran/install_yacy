@@ -1,5 +1,14 @@
 # install_yacy/CHANGELOG
 
+## 20261124
+
+0.7.1: + ROADMAP.md, with install_yacy to become yacy, a command with subcommands.
+
+1. + ROADMAP.md: Commands, which yacy does on its own and which by subcommand.
+2. ~ PROPOSED.md: - Commands, now in ROADMAP.md. Its opening says ROADMAP.md is there.
+3. ~ bin/install_yacy: /0.7.0/0.7.1/, and the date.
+
+
 ## 20261123
 
 0.7.0: --java chooses where Java comes from, and where nothing is chosen, Java already installed is used, else a package manager already installed, else Adoptium's JRE, rather than Homebrew being installed.

@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # install_yacy
 
-# 20261123
-# 0.7.0
+# 20261124
+# 0.7.1
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
