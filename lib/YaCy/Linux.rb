@@ -2,7 +2,7 @@
 # YaCy::Linux
 
 # 20261125
-# 0.2.0
+# 0.3.0
 
 require 'FileUtils/which'
 require 'YaCy/Adoptium'
@@ -190,9 +190,9 @@ module YaCy
     # Where there's no display to open it on, as on a server, the address is given instead.
     def open_yacy_page
       if display? && FileUtils.which('xdg-open')
-        run('xdg-open', yacy_url, show: true)
+        run('xdg-open', yacy_page_url, show: true)
       else
-        puts "YaCy is running at #{yacy_url}"
+        give_yacy_address
       end
     end
   end

@@ -299,59 +299,56 @@ describe YaCy::MacOS do
       end
     end
 
-    describe ".yacy_running?" do
-      let(:data_dir){File.join(home, 'Library', 'Application Support', 'net.yacy.YaCy', 'DATA')}
-
-      it "is true where yacy.running in its DATA in ~/Library/Application Support names a process which is running" do
-        FileUtils.mkdir_p(data_dir)
-        File.write(File.join(data_dir, 'yacy.running'), Process.pid.to_s)
-        expect(YaCy::MacOS.yacy_running?).must_equal true
-      end
-
-      it "is false where yacy.running was left behind by a process which isn't running" do
-        FileUtils.mkdir_p(data_dir)
-        File.write(File.join(data_dir, 'yacy.running'), '99999999')
-        expect(YaCy::MacOS.yacy_running?).must_equal false
-      end
-
-      it "is false where there's no yacy.running" do
-        expect(YaCy::MacOS.yacy_running?).must_equal false
+    describe ".yacy_data_dir" do
+      it "is DATA in ~/Library/Application Support/net.yacy.YaCy, apart from YaCy.app" do
+        expect(YaCy::MacOS.yacy_data_dir).must_equal File.join(home, 'Library', 'Application Support', 'net.yacy.YaCy', 'DATA')
       end
     end
 
-    describe ".yacy_url" do
-      let(:settings_dir){File.join(home, 'Library', 'Application Support', 'net.yacy.YaCy', 'DATA', 'SETTINGS')}
-
-      it "has the port from YaCy's settings" do
-        FileUtils.mkdir_p(settings_dir)
-        File.write(File.join(settings_dir, 'yacy.conf'), "portForwarding=false\nport=8091\n")
-        expect(YaCy::MacOS.yacy_url).must_equal 'http://localhost:8091/'
-      end
-
-      it "has YaCy's default port where there are no settings yet" do
-        expect(YaCy::MacOS.yacy_url).must_equal 'http://localhost:8090/'
-      end
-    end
-
-    describe ".stop_yacy" do
-      after do
-        ENV.delete('YACY_DATA_PATH')
-      end
-
-      it "asks YaCy to shut down with YaCy.app's apicall.sh, on its DATA" do
+    describe ".yacy_scripts_dir" do
+      it "is Contents/MacOS in YaCy.app" do
         FileUtils.mkdir_p(File.join(home, 'Applications', 'YaCy.app'))
-        commands = []
-        YaCy::MacOS.stub(:run, ->(*command, **options){commands << command; true}){YaCy::MacOS.stop_yacy}
-        expect(commands).must_equal [["sh #{File.join(home, 'Applications', 'YaCy.app', 'Contents', 'MacOS', 'bin', 'apicall.sh')} 'Steering.html?shutdown=true' > /dev/null"]]
-        expect(ENV['YACY_DATA_PATH']).must_equal File.join(home, 'Library', 'Application Support', 'net.yacy.YaCy', 'DATA')
+        expect(YaCy::MacOS.yacy_scripts_dir).must_equal File.join(home, 'Applications', 'YaCy.app', 'Contents', 'MacOS')
       end
     end
 
-    describe ".open_yacy_page" do
-      it "opens YaCy's address" do
-        commands = []
-        YaCy::MacOS.stub(:run, ->(*command, **options){commands << command; true}){YaCy::MacOS.open_yacy_page}
-        expect(commands).must_equal [['open', 'http://localhost:8090/']]
+    describe "with or without SSH" do
+      before do
+        @ssh_connection = ENV['SSH_CONNECTION']
+        ENV.delete('SSH_CONNECTION')
+      end
+
+      after do
+        ENV['SSH_CONNECTION'] = @ssh_connection
+      end
+
+      describe ".display?" do
+        it "is true where yacy isn't run over SSH" do
+          expect(YaCy::MacOS.display?).must_equal true
+        end
+
+        it "is false where yacy is run over SSH" do
+          ENV['SSH_CONNECTION'] = '192.0.2.1 50000 192.0.2.2 22'
+          expect(YaCy::MacOS.display?).must_equal false
+        end
+      end
+
+      describe ".open_yacy_page" do
+        it "opens the page YaCy opens as it starts" do
+          commands = []
+          YaCy::MacOS.stub(:run, ->(*command, **options){commands << command; true}){YaCy::MacOS.open_yacy_page}
+          expect(commands).must_equal [['open', 'http://localhost:8090/index.html']]
+        end
+
+        it "gives YaCy's address where yacy is run over SSH" do
+          ENV['SSH_CONNECTION'] = '192.0.2.1 50000 192.0.2.2 22'
+          commands = []
+          out, _ = capture_io do
+            YaCy::MacOS.stub(:run, ->(*command, **options){commands << command; true}){YaCy::MacOS.open_yacy_page}
+          end
+          expect(commands).must_equal []
+          expect(out).must_equal "YaCy is running at http://localhost:8090/\n"
+        end
       end
     end
   end

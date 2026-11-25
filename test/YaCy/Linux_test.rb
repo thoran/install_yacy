@@ -91,6 +91,18 @@ describe YaCy::Linux do
     end
   end
 
+  describe ".yacy_data_dir" do
+    it "is DATA in YaCy's own directory" do
+      expect(YaCy::Linux.yacy_data_dir).must_equal File.join(home, '.local', 'share', 'yacy', 'DATA')
+    end
+  end
+
+  describe ".yacy_scripts_dir" do
+    it "is YaCy's own directory" do
+      expect(YaCy::Linux.yacy_scripts_dir).must_equal File.join(home, '.local', 'share', 'yacy')
+    end
+  end
+
   describe ".java_source" do
     before do
       YaCy::Linux.instance_variable_set(:@system_package_manager, nil)
@@ -307,24 +319,6 @@ describe YaCy::Linux do
     end
   end
 
-  describe ".yacy_running?" do
-    it "is true where DATA/yacy.running names a process which is running" do
-      FileUtils.mkdir_p(File.join(YaCy::Linux.yacy_dir, 'DATA'))
-      File.write(File.join(YaCy::Linux.yacy_dir, 'DATA', 'yacy.running'), Process.pid.to_s)
-      expect(YaCy::Linux.yacy_running?).must_equal true
-    end
-
-    it "is false where DATA/yacy.running was left behind by a process which isn't running" do
-      FileUtils.mkdir_p(File.join(YaCy::Linux.yacy_dir, 'DATA'))
-      File.write(File.join(YaCy::Linux.yacy_dir, 'DATA', 'yacy.running'), '99999999')
-      expect(YaCy::Linux.yacy_running?).must_equal false
-    end
-
-    it "is false otherwise" do
-      expect(YaCy::Linux.yacy_running?).must_equal false
-    end
-  end
-
   describe ".start_yacy" do
     before do
       @path = ENV['PATH']
@@ -362,52 +356,6 @@ describe YaCy::Linux do
     end
   end
 
-  describe ".yacy_url" do
-    it "has the port from YaCy's settings" do
-      FileUtils.mkdir_p(File.join(YaCy::Linux.yacy_dir, 'DATA', 'SETTINGS'))
-      File.write(File.join(YaCy::Linux.yacy_dir, 'DATA', 'SETTINGS', 'yacy.conf'), "port=8091\n")
-      expect(YaCy::Linux.yacy_url).must_equal 'http://localhost:8091/'
-    end
-
-    it "has YaCy's default port where there are no settings yet" do
-      expect(YaCy::Linux.yacy_url).must_equal 'http://localhost:8090/'
-    end
-  end
-
-  describe ".stop_yacy" do
-    after do
-      ENV.delete('YACY_DATA_PATH')
-    end
-
-    it "asks YaCy to shut down with its apicall.sh, on its DATA" do
-      commands = []
-      YaCy::Linux.stub(:run, ->(*command, **options){commands << command; true}){YaCy::Linux.stop_yacy}
-      expect(commands).must_equal [["sh #{File.join(home, '.local', 'share', 'yacy', 'bin', 'apicall.sh')} 'Steering.html?shutdown=true' > /dev/null"]]
-      expect(ENV['YACY_DATA_PATH']).must_equal File.join(home, '.local', 'share', 'yacy', 'DATA')
-    end
-
-    it "waits until YaCy has stopped" do
-      answers = [true, true, false]
-      YaCy::Linux.stub(:run, true) do
-        YaCy::Linux.stub(:yacy_running?, ->{answers.shift}) do
-          YaCy::Linux.stub(:sleep, nil){YaCy::Linux.stop_yacy}
-        end
-      end
-      expect(answers).must_equal []
-    end
-
-    it "stops where YaCy hasn't stopped in time" do
-      YaCy::Linux.stub(:run, true) do
-        YaCy::Linux.stub(:yacy_running?, true) do
-          YaCy::Linux.stub(:sleep, nil) do
-            _, err = capture_io{expect{YaCy::Linux.stop_yacy}.must_raise SystemExit}
-            expect(err).must_match /YaCy hasn't stopped after 120 seconds/
-          end
-        end
-      end
-    end
-  end
-
   describe ".open_yacy_page" do
     before do
       @display = ENV.to_h.slice('DISPLAY', 'WAYLAND_DISPLAY')
@@ -419,13 +367,13 @@ describe YaCy::Linux do
       ENV.update(@display)
     end
 
-    it "opens YaCy's address with xdg-open where there's a display" do
+    it "opens the page YaCy opens as it starts with xdg-open where there's a display" do
       ENV['DISPLAY'] = ':0'
       commands = []
       FileUtils.stub(:which, '/usr/bin/xdg-open') do
         YaCy::Linux.stub(:run, ->(*command, **options){commands << command; true}){YaCy::Linux.open_yacy_page}
       end
-      expect(commands).must_equal [['xdg-open', 'http://localhost:8090/']]
+      expect(commands).must_equal [['xdg-open', 'http://localhost:8090/index.html']]
     end
 
     it "gives YaCy's address where there's no display" do

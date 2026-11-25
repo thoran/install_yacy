@@ -1,3 +1,1 @@
 # yacy/TODO
-
-1. yacy on its own: Where it has started YaCy, wait until YaCy answers on its port, checking once a second up to a timeout as wait_for_yacy_to_stop() does, then open YaCy's page unless browserPopUpTrigger is true in DATA/SETTINGS/yacy.conf, or the file isn't there yet, YaCy's default being true. As it is, the page is left to YaCy, and doesn't open where browserPopUpTrigger is false.

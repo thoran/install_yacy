@@ -2,6 +2,26 @@
 
 ## 20261125
 
+0.9.0: Open the search page if YaCy doesn't.
+
+1. ~ YaCy::Process: + yacy_setting(): A setting from YaCy's yacy.conf, which yacy_port() now reads with.
+2. + YaCy::Process.yacy_opens_its_own_page?(): It's true unless browserPopUpTrigger is false, YaCy's default being true.
+3. + YaCy::Process.yacy_page(), yacy_page_url(): The page YaCy opens as it starts, browserPopUpPage, or index.html, YaCy's default.
+4. ~ YaCy::MacOS.open_yacy_page(), YaCy::Linux.open_yacy_page(): They open yacy_page_url(), so as the page is the same whichever of YaCy and yacy opens it.
+5. + YaCy::Process.give_yacy_address(): It says where YaCy is running, for where a page opened here couldn't be seen. YaCy::Linux.open_yacy_page() gives the address with it.
+6. + YaCy::MacOS.display?(): It's false over SSH, where a page opened would open on the Mac's own screen.
+7. ~ YaCy::MacOS.open_yacy_page(): Gives YaCy's address where display?() is false.
+8. + YaCy::Process.yacy_answering?(), wait_for_yacy_to_answer(): Asked once a second, for up to START_TIMEOUT, 120 seconds.
+9. ~ bin/yacy: + wait_for_yacy_to_answer(), yacy_opens_its_own_page?(), display?(), each taken by platform().
+10. ~ bin/yacy: install_start_and_open(): Where it starts YaCy, waits until YaCy answers, then opens its page unless YaCy opens it itself, or gives its address where there's no display for YaCy to open it on. The page didn't open where browserPopUpTrigger was false.
+11. + test/YaCy/Process_test.rb: YaCy::Process's settings, port, page, address, running check, answering, waiting and stopping are tested once, rather than for each platform.
+12. ~ test/YaCy/Linux_test.rb, test/YaCy/MacOS_test.rb: The tests of YaCy::Process are moved to Process_test.rb; each platform's yacy_data_dir() and yacy_scripts_dir() are tested, and that open_yacy_page() opens yacy_page_url(); on macOS, display?() and the address given over SSH.
+13. ~ README.md: Description: The wait, the page, browserPopUpPage, opened where YaCy doesn't open it, and the address given where the page couldn't be seen.
+14. ~ PROPOSED.md: Uninstalling: What yacy uninstall might remove on macOS and Linux, and what brew uninstall yacy doesn't.
+15. ~ TODO: The item for opening YaCy's page is removed, being done.
+16. ~ bin/yacy: /0.8.1/0.9.0/
+
+
 0.8.1: ~ README.md: /brew install install_yacy/brew install yacy/
 
 1. ~ README.md: /brew install install_yacy/brew install yacy/

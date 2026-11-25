@@ -2,7 +2,7 @@
 # YaCy::MacOS
 
 # 20261125
-# 0.2.0
+# 0.3.0
 
 require 'fileutils'
 require 'FileUtils/which'
@@ -231,8 +231,18 @@ module YaCy
       File.join(yacy_app, 'Contents', 'MacOS')
     end
 
+    # Over SSH, a page opened here would open on the Mac's own screen, rather than before whoever ran yacy.
+    def display?
+      !ENV['SSH_CONNECTION']
+    end
+
+    # Where the page couldn't be seen, YaCy's address is given instead.
     def open_yacy_page
-      run('open', yacy_url, show: true)
+      if display?
+        run('open', yacy_page_url, show: true)
+      else
+        give_yacy_address
+      end
     end
   end
 end

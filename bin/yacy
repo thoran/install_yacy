@@ -2,7 +2,7 @@
 # yacy
 
 # 20261125
-# 0.8.1
+# 0.9.0
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
@@ -140,6 +140,18 @@ def stop_yacy
   platform.stop_yacy
 end
 
+def wait_for_yacy_to_answer
+  platform.wait_for_yacy_to_answer
+end
+
+def yacy_opens_its_own_page?
+  platform.yacy_opens_its_own_page?
+end
+
+def display?
+  platform.display?
+end
+
 def open_yacy_page
   platform.open_yacy_page
 end
@@ -163,11 +175,16 @@ def stop
   stop_yacy if yacy_running?
 end
 
-# YaCy opens its own page as it starts, so the page is opened here only where it was running already.
+# Where YaCy is started here, its page is opened once it answers, unless YaCy opens it itself, or its address given where there's no display for YaCy to open it on.
 def install_start_and_open
   install
-  open_yacy_page if yacy_running?
-  start_yacy unless yacy_running?
+  if yacy_running?
+    open_yacy_page
+  else
+    start_yacy
+    wait_for_yacy_to_answer
+    open_yacy_page unless yacy_opens_its_own_page? && display?
+  end
 end
 
 def main
