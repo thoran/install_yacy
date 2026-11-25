@@ -1,10 +1,10 @@
-# InstallYaCy/Java.rb
-# InstallYaCy::Java
+# YaCy/Java.rb
+# YaCy::Java
 
-# 20261123
-# 0.0.0
+# 20261125
+# 0.1.0
 
-module InstallYaCy
+module YaCy
   # Where Java comes from: chosen by name, or by a path to a java, or left to auto. Each module using this one gives its own java_sources, beginning with existing and ending with adoptium, with between them the package managers it knows, and for each source a <source>_java_installed? and an install_<source>_java, as well as package_manager_installed?, path_java_installed? and install_path_java.
   module Java
     MINIMUM_JAVA_VERSION = 17
@@ -72,9 +72,9 @@ module InstallYaCy
     # Asks before Homebrew is installed, unless allow_homebrew_install says it may be, and stops where the answer isn't yes, or where there's no terminal to ask at.
     def confirm_homebrew_install(allow_homebrew_install:)
       return if allow_homebrew_install
-      abort("Homebrew isn't installed. Run install_yacy with --install-homebrew to have it installed, or choose another --java.") unless $stdin.tty?
+      abort("Homebrew isn't installed. Run yacy with --install-homebrew to have it installed, or choose another --java.") unless $stdin.tty?
       print "Homebrew isn't installed. Install it, to get Java from it? [y/N] "
-      abort("Homebrew wasn't installed. Choose another --java, or run install_yacy again.") unless $stdin.gets.to_s.strip.match?(/\Ay(es)?\z/i)
+      abort("Homebrew wasn't installed. Choose another --java, or run yacy again.") unless $stdin.gets.to_s.strip.match?(/\Ay(es)?\z/i)
     end
   end
 end

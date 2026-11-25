@@ -1,8 +1,8 @@
-# InstallYaCy/Adoptium.rb
-# InstallYaCy::Adoptium
+# YaCy/Adoptium.rb
+# YaCy::Adoptium
 
-# 20261123
-# 0.0.0
+# 20261125
+# 0.1.0
 
 require 'digest'
 require 'json'
@@ -10,8 +10,8 @@ require 'open-uri'
 require 'rbconfig'
 require 'Tarball'
 
-module InstallYaCy
-  # Adoptium's Temurin JRE of the latest long-term release, a JRE rather than a JDK since YaCy only runs Java. Each module using this one gives its own adoptium_os, adoptium_dir and adoptium_java_path, and includes InstallYaCy::Download and InstallYaCy::Java.
+module YaCy
+  # Adoptium's Temurin JRE of the latest long-term release, a JRE rather than a JDK since YaCy only runs Java. Each module using this one gives its own adoptium_os, adoptium_dir and adoptium_java_path, and includes YaCy::Download and YaCy::Java.
   module Adoptium
     def adoptium_api_url
       'https://api.adoptium.net/v3'
@@ -30,7 +30,7 @@ module InstallYaCy
       @adoptium_jre_package ||= (
         url = "#{adoptium_api_url}/assets/latest/#{latest_lts_java_version}/hotspot?architecture=#{adoptium_architecture}&image_type=jre&os=#{adoptium_os}&vendor=eclipse"
         asset = JSON.parse(URI.open(url).read).first
-        abort("Adoptium has no Java runtime for #{adoptium_os} on #{adoptium_architecture}. Install Java #{InstallYaCy::Java::MINIMUM_JAVA_VERSION} or later, or choose another --java.") unless asset
+        abort("Adoptium has no Java runtime for #{adoptium_os} on #{adoptium_architecture}. Install Java #{YaCy::Java::MINIMUM_JAVA_VERSION} or later, or choose another --java.") unless asset
         asset['binary']['package']
       )
     end
@@ -55,7 +55,7 @@ module InstallYaCy
     def install_adoptium_java
       announce("installing Adoptium's Temurin #{latest_lts_java_version} JRE into #{adoptium_dir} (#{adoptium_jre_package['size'] / 1_000_000} MB).")
       download(adoptium_jre_package['link'])
-      abort("#{adoptium_jre_tarball} doesn't match Adoptium's checksum. Delete it, and run install_yacy again.") unless adoptium_jre_checksum_matches?
+      abort("#{adoptium_jre_tarball} doesn't match Adoptium's checksum. Delete it, and run yacy again.") unless adoptium_jre_checksum_matches?
       Tarball.extract(adoptium_jre_tarball, to: adoptium_dir)
     end
   end

@@ -1,17 +1,18 @@
-# install_yacy
+# yacy
 
 ## Description
 
-Installs [YaCy](https://yacy.net), the peer-to-peer search engine, on macOS or Linux, and starts it.
+Installs [YaCy](https://yacy.net), the peer-to-peer search engine, on macOS or Linux, starts it, and opens its page, with the command `yacy`.
 
-YaCy runs on Java 17 or later, and ships for macOS as a disk image and for Linux as a tarball. `install_yacy` gets Java where there isn't one already, installs YaCy, and starts it, skipping whatever is already done:
+YaCy runs on Java 17 or later, and ships for macOS as a disk image and for Linux as a tarball. `yacy` gets Java where there isn't one already, installs YaCy, starts it, and opens its page, skipping whatever is already done:
 
 1. Puts [Homebrew](https://brew.sh) on `PATH` where it's installed but not on `PATH`, as on Apple silicon until the shell is set up. `brew` is looked for in `/opt/homebrew` and `/usr/local` on macOS, and in `/home/linuxbrew/.linuxbrew` and `~/.linuxbrew` on Linux.
 2. Gets Java, from wherever `--java` says, as under Java below.
 3. Downloads the latest YaCy disk image or tarball from [download.yacy.net](https://download.yacy.net) into `~/Downloads`, unless it is there already. On macOS it mounts the image, copies `YaCy.app` into `~/Applications` where that exists and `/Applications` otherwise, and unmounts it. On Linux it unpacks the tarball into `~/.local/share/yacy`, or `$XDG_DATA_HOME/yacy` where `XDG_DATA_HOME` is set.
-4. Starts YaCy, which serves its search page at http://localhost:8090. On macOS it opens `YaCy.app`, which opens the page in the default browser. On Linux it runs YaCy's `startYACY.sh`, which starts YaCy in the background, unless YaCy is running already.
+4. Starts YaCy, unless it's running already, and YaCy opens its search page in the default browser as it starts. On macOS it opens `YaCy.app`. On Linux it runs YaCy's `startYACY.sh`, which starts YaCy in the background.
+5. Where YaCy was running already, opens its page, at http://localhost:8090 unless YaCy's settings give another port: with `open` on macOS, and with `xdg-open` on Linux, or where there's no display, as on a server, gives its address instead.
 
-Run again once everything is installed, it only starts YaCy.
+Run again once YaCy is running, it only opens its page. Installing, starting and stopping may each be done alone, as under Usage.
 
 ### Java
 
@@ -54,10 +55,10 @@ $ sudo apk add ruby ruby-nokogiri
 ### 1. Clone the repository
 
 ```shell
-$ git clone https://github.com/thoran/install_yacy.git
+$ git clone https://github.com/thoran/yacy.git
 ```
 
-The script puts its own `../lib` on the load path, so a clone kept whole is all it needs. `lib/InstallYaCy` holds the steps, those for macOS in `InstallYaCy::MacOS` and those for Linux in `InstallYaCy::Linux`, each with the same steps, and what both share in `InstallYaCy::Download`, `InstallYaCy::Homebrew`, `InstallYaCy::Java` and `InstallYaCy::Adoptium`. On Linux, `lib/Linux` holds `Linux::PackageManager`, and `lib/Tarball.rb` holds `Tarball`, which need nothing beyond Ruby's standard library.
+The script puts its own `../lib` on the load path, so a clone kept whole is all it needs. `lib/YaCy` holds the steps, those for macOS in `YaCy::MacOS` and those for Linux in `YaCy::Linux`, each with the same steps, and what both share in `YaCy::Download`, `YaCy::Homebrew`, `YaCy::Java`, `YaCy::Adoptium` and `YaCy::Process`. On Linux, `lib/Linux` holds `Linux::PackageManager`, and `lib/Tarball.rb` holds `Tarball`, which need nothing beyond Ruby's standard library.
 
 ### Or, via Homebrew
 
@@ -77,10 +78,21 @@ Three gems, each installed by the script where it can't be required:
 ## Usage
 
 ```shell
-$ install_yacy/bin/install_yacy
-$ install_yacy/bin/install_yacy --java=adoptium
-$ install_yacy/bin/install_yacy --java=homebrew --install-homebrew
-$ install_yacy/bin/install_yacy --java=/opt/jdk-21/bin/java
+$ yacy/bin/yacy
+$ yacy/bin/yacy --java=adoptium
+$ yacy/bin/yacy --java=homebrew --install-homebrew
+$ yacy/bin/yacy --java=/opt/jdk-21/bin/java
+$ yacy/bin/yacy install
+$ yacy/bin/yacy stop
+```
+
+Subcommands:
+
+```
+(none)   Install YaCy unless it's installed, start it unless it's running, and open its page
+install  Install YaCy, and Java for it, unless they're installed
+start    Start YaCy, unless it's running
+stop     Stop YaCy, where it's running
 ```
 
 Options:
@@ -91,7 +103,7 @@ Options:
 -h, --help          Show the options
 ```
 
-Either may be set in `~/.config/install_yacy/config.yaml` instead, the switch winning where both are given:
+Either may be set in `~/.config/yacy/config.yaml` instead, the switch winning where both are given:
 
 ```yaml
 java: adoptium
@@ -103,24 +115,23 @@ Each command it runs is printed as it runs.
 On macOS:
 
 1. Where asked, enter the password you log in to your computer with. Only `--java=macports` asks, `sudo` installing MacPorts' Java.
-2. YaCy's disk image isn't signed, so the first time, macOS may say it could not verify "YaCy.app". Click Done and run `install_yacy` again, which will then only start YaCy. If it is still blocked, open System Settings > Privacy & Security, click Open Anyway beside the message about "YaCy.app", and run `install_yacy` again.
+2. YaCy's disk image isn't signed, so the first time, macOS may say it could not verify "YaCy.app". Click Done and run `yacy` again, which will then only start YaCy. If it is still blocked, open System Settings > Privacy & Security, click Open Anyway beside the message about "YaCy.app", and run `yacy` again.
 3. Where asked whether to allow "java" to find devices on local networks, Don't Allow is fine, unless YaCy is to index or find peers on your own network.
-4. To stop YaCy, quit it from its Dock icon.
+4. To stop YaCy, run `yacy stop`.
 
 On Linux:
 
 1. Where asked by sudo, enter your password. Only `--java=system`, or `auto` where it comes to the distribution's package manager, asks.
-2. Open http://localhost:8090 once YaCy has had a few seconds to start.
-3. To stop YaCy, run `~/.local/share/yacy/stopYACY.sh`.
-4. `startYACY.sh` finds Java with `which`, so to start YaCy with Adoptium's JRE other than by `install_yacy`, put `~/.local/share/yacy-jre/<the JRE>/bin` on `PATH` first.
+2. To stop YaCy, run `yacy stop`.
+3. `startYACY.sh` finds Java with `which`, so to start YaCy with Adoptium's JRE other than by `yacy`, put `~/.local/share/yacy-jre/<the JRE>/bin` on `PATH` first.
 
 ## Notes
 
 1. macOS, on Apple silicon or Intel, and Linux with `apt-get`, `dnf`, `yum`, `pacman`, `zypper` or `apk`, or with none of them by way of Adoptium. Homebrew isn't used as root on Linux, which Homebrew refuses.
 2. YaCy needs Java 17 or later, and a Java older than that counts as none. With `apt-get`, the distribution's default Java is installed, which is that on Debian 12 and later and Ubuntu 24.04 and later, but is Java 11 on Ubuntu 22.04. With `pacman`, the package database isn't synchronised first, so as not to upgrade only in part.
 3. On macOS, `YaCy.app` is started by `open`, and so finds Java by way of `java_home`, which looks in `/Library/Java/JavaVirtualMachines` and `~/Library/Java/JavaVirtualMachines`, and takes the newest Java there, whichever `--java` installed it. Homebrew's `openjdk` is linked into `~/Library/Java/JavaVirtualMachines`, without sudo, where it isn't linked into either already. A path given to `--java` on macOS has to be within a Java bundle, ending in `Contents/Home/bin/java`, which is linked there likewise.
-4. A JRE from Adoptium gets no updates other than by running `install_yacy` again once it's removed, where Java from a package manager is updated along with the rest of what the package manager installed.
-5. On macOS, YaCy is found to be installed where `YaCy.app` is in `~/Applications` or `/Applications`, wherever it came from. On Linux, where `startYACY.sh` is in `~/.local/share/yacy`, and to be running where YaCy's own `DATA/yacy.running` is there, as YaCy's own scripts take it to be.
+4. A JRE from Adoptium gets no updates other than by running `yacy` again once it's removed, where Java from a package manager is updated along with the rest of what the package manager installed.
+5. On macOS, YaCy is found to be installed where `YaCy.app` is in `~/Applications` or `/Applications`, wherever it came from. On Linux, where `startYACY.sh` is in `~/.local/share/yacy`. On either, YaCy is found to be running where the process named in its own `yacy.running`, in its `DATA`, is running, a `yacy.running` being left behind where YaCy didn't shut down cleanly. It's stopped as YaCy's own `stopYACY.sh` stops it, by asking it through its API, which YaCy lets do from the same computer without a password unless its settings say otherwise, when the password is asked for.
 6. `startYACY.sh` needs `getopt`, from util-linux, which all but the most minimal Linux installs have.
 7. There is no uninstaller. On macOS, YaCy keeps its index and settings in `~/Library/Application Support/net.yacy.YaCy`, apart from the app. On Linux, it keeps them in `DATA` within `~/.local/share/yacy`.
 8. The disk image or tarball is left in `~/Downloads`, so as a second install doesn't download it again. On Linux, `~/Downloads` is made where there isn't one.
@@ -129,8 +140,8 @@ On Linux:
 
 ```shell
 $ bundle install
-$ bundle exec ruby test/InstallYaCy/MacOS_test.rb
-$ bundle exec ruby test/InstallYaCy/Linux_test.rb
+$ bundle exec ruby test/YaCy/MacOS_test.rb
+$ bundle exec ruby test/YaCy/Linux_test.rb
 $ bundle exec ruby test/Linux/PackageManager_test.rb
 $ bundle exec ruby test/Tarball_test.rb
 ```
@@ -139,7 +150,7 @@ download.yacy.net and the package managers are stubbed, so they run on macOS too
 
 ## Contributing
 
-1. Fork it: `https://github.com/thoran/install_yacy/fork`
+1. Fork it: `https://github.com/thoran/yacy/fork`
 2. Create your feature branch: `git checkout -b my-new-feature`
 3. Commit your changes: `git commit -am 'Add some feature'`
 4. Push to the branch: `git push origin my-new-feature`

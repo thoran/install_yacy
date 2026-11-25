@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
-# install_yacy
+# yacy
 
-# 20261124
-# 0.7.1
+# 20261125
+# 0.8.0
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
@@ -23,31 +23,37 @@ end
 def platform
   @platform ||= (
     if macos?
-      require 'InstallYaCy/MacOS'
+      require 'YaCy/MacOS'
       Tarball.verbose = true
-      InstallYaCy::MacOS
+      YaCy::MacOS
     elsif linux?
-      require 'InstallYaCy/Linux'
+      require 'YaCy/Linux'
       Linux::PackageManager.verbose = true
       Tarball.verbose = true
-      InstallYaCy::Linux
+      YaCy::Linux
     else
-      abort("install_yacy installs YaCy on macOS and Linux only.")
+      abort("yacy installs YaCy on macOS and Linux only.")
     end
   )
 end
 
 def usage
-  puts "install_yacy - Installs YaCy, and Java for it where it's wanted, and starts YaCy."
+  puts "yacy - Installs YaCy, and Java for it where it's wanted, starts it, and opens its page."
   puts
-  puts "Usage: install_yacy [--java=SOURCE] [--install-homebrew]"
+  puts "Usage: yacy [SUBCOMMAND] [--java=SOURCE] [--install-homebrew]"
+  puts
+  puts "Subcommands:"
+  puts "  (none)   Install YaCy unless it's installed, start it unless it's running, and open its page"
+  puts "  install  Install YaCy, and Java for it, unless they're installed"
+  puts "  start    Start YaCy, unless it's running"
+  puts "  stop     Stop YaCy, where it's running"
   puts
   puts "Options:"
   puts "  --java=SOURCE       Where Java comes from: #{platform.java_choices.join(', ')}, or a path to a java (default: auto)"
   puts "  --install-homebrew  Install Homebrew without asking, where --java=homebrew and it isn't installed"
   puts "  -h, --help          Show this help"
   puts
-  puts "Each may be set in #{config_path} instead, as java: and install_homebrew:."
+  puts "Each option may be set in #{config_path} instead, as java: and install_homebrew:."
 end
 
 def switches
@@ -60,11 +66,24 @@ def switches
     end
   end
 rescue OptionParser::ParseError => e
-  abort("#{e.message}. Run install_yacy --help for the options.")
+  abort("#{e.message}. Run yacy --help for the options.")
+end
+
+def subcommands
+  %w{install start stop}
+end
+
+def subcommand
+  @subcommand ||= ARGV.first
+end
+
+def validate_subcommand
+  return if subcommand.nil? || subcommands.include?(subcommand)
+  abort("#{subcommand} isn't a subcommand. Run yacy --help for the subcommands.")
 end
 
 def config_path
-  File.join(Dir.home, '.config', 'install_yacy', 'config.yaml')
+  File.join(Dir.home, '.config', 'yacy', 'config.yaml')
 end
 
 def config
@@ -109,17 +128,58 @@ def install_yacy
   platform.install_yacy
 end
 
+def yacy_running?
+  platform.yacy_running?
+end
+
 def start_yacy
   platform.start_yacy
 end
 
-def main
-  switches
-  validate_java
+def stop_yacy
+  platform.stop_yacy
+end
+
+def open_yacy_page
+  platform.open_yacy_page
+end
+
+def check_yacy_installed
+  abort("YaCy isn't installed. Run yacy, or yacy install.") unless yacy_installed?
+end
+
+def install
   put_homebrew_on_path if homebrew_installed_but_not_on_path?
   install_java unless java_installed?
   install_yacy unless yacy_installed?
-  start_yacy
+end
+
+def start
+  check_yacy_installed
+  start_yacy unless yacy_running?
+end
+
+def stop
+  stop_yacy if yacy_running?
+end
+
+# YaCy opens its own page as it starts, so the page is opened here only where it was running already.
+def install_start_and_open
+  install
+  open_yacy_page if yacy_running?
+  start_yacy unless yacy_running?
+end
+
+def main
+  switches
+  validate_subcommand
+  validate_java
+  case subcommand
+  when 'install' then install
+  when 'start' then start
+  when 'stop' then stop
+  else install_start_and_open
+  end
 end
 
 main

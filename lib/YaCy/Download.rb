@@ -1,8 +1,8 @@
-# InstallYaCy/Download.rb
-# InstallYaCy::Download
+# YaCy/Download.rb
+# YaCy::Download
 
-# 20261116
-# 0.0.0
+# 20261125
+# 0.1.0
 
 require 'fileutils'
 require 'Kernel/require_gem'
@@ -10,7 +10,7 @@ require 'open-uri'
 
 require_gem 'nokogiri'
 
-module InstallYaCy
+module YaCy
   module Download
     def download_site
       'https://download.yacy.net'

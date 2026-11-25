@@ -1,13 +1,13 @@
-# InstallYaCy/Homebrew.rb
-# InstallYaCy::Homebrew
+# YaCy/Homebrew.rb
+# YaCy::Homebrew
 
-# 20261123
-# 0.1.0
+# 20261125
+# 0.2.0
 
 require 'FileUtils/which'
 require 'Kernel/run'
 
-module InstallYaCy
+module YaCy
   # Where Homebrew installs itself differs by OS, so each module using this one gives its own homebrew_paths.
   module Homebrew
     def brew_path

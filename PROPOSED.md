@@ -1,6 +1,6 @@
-# install_yacy/PROPOSED.md
+# yacy/PROPOSED.md
 
-The discrete jobs are to go in TODO, of which there is none yet, and the direction is in ROADMAP.md. This holds what is undecided.
+The discrete jobs are in TODO, and the direction is in ROADMAP.md. This holds what is undecided.
 
 ## Packaging
 

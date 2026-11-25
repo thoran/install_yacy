@@ -1,24 +1,26 @@
-# InstallYaCy/Linux.rb
-# InstallYaCy::Linux
+# YaCy/Linux.rb
+# YaCy::Linux
 
-# 20261123
-# 0.1.0
+# 20261125
+# 0.2.0
 
 require 'FileUtils/which'
-require 'InstallYaCy/Adoptium'
-require 'InstallYaCy/Download'
-require 'InstallYaCy/Homebrew'
-require 'InstallYaCy/Java'
+require 'YaCy/Adoptium'
+require 'YaCy/Download'
+require 'YaCy/Homebrew'
+require 'YaCy/Java'
+require 'YaCy/Process'
 require 'Kernel/run'
 require 'Linux/PackageManager'
 require 'Tarball'
 
-module InstallYaCy
+module YaCy
   module Linux
-    include InstallYaCy::Download
-    include InstallYaCy::Homebrew
-    include InstallYaCy::Java
-    include InstallYaCy::Adoptium
+    include YaCy::Download
+    include YaCy::Homebrew
+    include YaCy::Java
+    include YaCy::Adoptium
+    include YaCy::Process
     extend self
 
     def java_sources
@@ -42,7 +44,7 @@ module InstallYaCy
     end
 
     def root?
-      Process.uid.zero?
+      ::Process.uid.zero?
     end
 
     # Homebrew installs itself into /home/linuxbrew/.linuxbrew, or into ~/.linuxbrew where it can't write there.
@@ -64,7 +66,7 @@ module InstallYaCy
     end
 
     def install_homebrew_java(allow_homebrew_install: false)
-      abort("Homebrew won't run as root. Run install_yacy as another user, or choose another --java.") if root?
+      abort("Homebrew won't run as root. Run yacy as another user, or choose another --java.") if root?
       unless homebrew_installed?
         confirm_homebrew_install(allow_homebrew_install: allow_homebrew_install)
         announce("installing Homebrew.")
@@ -166,9 +168,12 @@ module InstallYaCy
       unpack_yacy
     end
 
-    # Where DATA/yacy.running is, as YaCy's stopYACY.sh takes it.
-    def yacy_running?
-      File.exist?(File.join(yacy_dir, 'DATA', 'yacy.running'))
+    def yacy_data_dir
+      File.join(yacy_dir, 'DATA')
+    end
+
+    def yacy_scripts_dir
+      yacy_dir
     end
 
     # startYACY.sh run twice would start a second YaCy which can't have the port. Adoptium's JRE is put on PATH where there's no other suitable Java there, since startYACY.sh finds Java with which.
@@ -176,6 +181,19 @@ module InstallYaCy
       return if yacy_running?
       put_adoptium_java_on_path if !suitable_java?(java_on_path) && adoptium_java_installed?
       run(File.join(yacy_dir, 'startYACY.sh'), show: true)
+    end
+
+    def display?
+      !!(ENV['DISPLAY'] || ENV['WAYLAND_DISPLAY'])
+    end
+
+    # Where there's no display to open it on, as on a server, the address is given instead.
+    def open_yacy_page
+      if display? && FileUtils.which('xdg-open')
+        run('xdg-open', yacy_url, show: true)
+      else
+        puts "YaCy is running at #{yacy_url}"
+      end
     end
   end
 end

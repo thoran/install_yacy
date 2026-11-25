@@ -1,26 +1,28 @@
-# InstallYaCy/MacOS.rb
-# InstallYaCy::MacOS
+# YaCy/MacOS.rb
+# YaCy::MacOS
 
-# 20261123
-# 0.1.0
+# 20261125
+# 0.2.0
 
 require 'fileutils'
 require 'FileUtils/which'
-require 'InstallYaCy/Adoptium'
-require 'InstallYaCy/Download'
-require 'InstallYaCy/Homebrew'
-require 'InstallYaCy/Java'
+require 'YaCy/Adoptium'
+require 'YaCy/Download'
+require 'YaCy/Homebrew'
+require 'YaCy/Java'
+require 'YaCy/Process'
 require 'Kernel/require_gem'
 require 'Kernel/run'
 
 require_gem 'MacOS/Dmg', gem_name: 'macos.rb'
 
-module InstallYaCy
+module YaCy
   module MacOS
-    include InstallYaCy::Download
-    include InstallYaCy::Homebrew
-    include InstallYaCy::Java
-    include InstallYaCy::Adoptium
+    include YaCy::Download
+    include YaCy::Homebrew
+    include YaCy::Java
+    include YaCy::Adoptium
+    include YaCy::Process
     extend self
 
     def java_sources
@@ -188,8 +190,12 @@ module InstallYaCy
       Dir.exist?(user_applications_dir) ? user_applications_dir : '/Applications'
     end
 
+    def yacy_app
+      [File.join(user_applications_dir, 'YaCy.app'), '/Applications/YaCy.app'].detect{|path| File.exist?(path)}
+    end
+
     def yacy_installed?
-      File.exist?(File.join(user_applications_dir, 'YaCy.app')) || File.exist?('/Applications/YaCy.app')
+      !!yacy_app
     end
 
     def mount_yacy_image
@@ -211,9 +217,22 @@ module InstallYaCy
       unmount_yacy_image
     end
 
-    # open -a brings YaCy to the front where it's running already, rather than starting a second, and opens its search page.
+    # open -a runs YaCy.app, whose startYACYMacOS.sh starts YaCy with its DATA in yacy_data_dir, and YaCy opens its own page as it starts.
     def start_yacy
       run("open -a 'YaCy'", show: true)
+    end
+
+    # YaCy.app keeps its DATA here, as its startYACYMacOS.sh says, rather than within the app.
+    def yacy_data_dir
+      File.join(Dir.home, 'Library', 'Application Support', 'net.yacy.YaCy', 'DATA')
+    end
+
+    def yacy_scripts_dir
+      File.join(yacy_app, 'Contents', 'MacOS')
+    end
+
+    def open_yacy_page
+      run('open', yacy_url, show: true)
     end
   end
 end

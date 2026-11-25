@@ -1,4 +1,31 @@
-# install_yacy/CHANGELOG
+# yacy/CHANGELOG
+
+## 20261125
+
+0.8.0: install_yacy is now yacy, with install, start and stop as subcommands, and on its own it opens YaCy's page where YaCy is running already.
+
+1. /install_yacy/yacy/: bin/install_yacy is now bin/yacy.
+2. /InstallYaCy/YaCy/: lib/InstallYaCy, test/InstallYaCy, and the modules now YaCy::MacOS, YaCy::Linux, YaCy::Download, YaCy::Homebrew, YaCy::Java and YaCy::Adoptium, after the command.
+3. ~ bin/yacy: + subcommands(), subcommand(), validate_subcommand(): The subcommand is what's left of the arguments once switches.rb has read the options, and a word which isn't one stops.
+4. ~ bin/yacy: + install(), start(), stop(), install_start_and_open(): A step for each subcommand, and one for yacy on its own.
+5. ~ bin/yacy: + yacy_running?(), stop_yacy(), open_yacy_page(), each taken by platform(); + check_yacy_installed(), which stops start where YaCy isn't installed.
+6. ~ main(): Runs the subcommand given, or with none, installs what isn't installed, opens YaCy's page where it's running, and starts it where it isn't, YaCy opening its own page as it starts.
+7. ~ bin/yacy: config_path(): ~/.config/yacy/config.yaml, rather than ~/.config/install_yacy/config.yaml.
+8. ~ bin/yacy: usage(): + Subcommands. The command is named yacy.
+9. + lib/YaCy/Process.rb: YaCy::Process reads YaCy's port from its settings, finds YaCy running where the process named in the yacy.running in its DATA is, and stops it as YaCy's stopYACY.sh does, through YaCy's apicall.sh, waiting until it has stopped.
+10. ~ YaCy::Linux: - yacy_running?(), now in YaCy::Process; + yacy_data_dir(), yacy_scripts_dir().
+11. + YaCy::Linux.open_yacy_page(): With xdg-open, or where there's no display, YaCy's address is given instead.
+12. ~ YaCy::MacOS: + yacy_app(), yacy_data_dir(), yacy_scripts_dir(), open_yacy_page(). YaCy.app keeps its DATA in ~/Library/Application Support/net.yacy.YaCy.
+13. ~ YaCy::MacOS.yacy_installed?(): Where yacy_app() finds YaCy.app.
+14. ~ YaCy::Java, YaCy::Adoptium, YaCy::Linux: Their messages name yacy rather than install_yacy.
+15. ~ test/YaCy/MacOS_test.rb, test/YaCy/Linux_test.rb: The port, the running check, stopping and opening the page are tested.
+16. ~ README.md: Description, Usage and Notes cover yacy, its subcommands, and the page, and the repository is named yacy.
+17. ~ ROADMAP.md: Commands holds only what's still to come, yacy upgrade, the notice of a newer YaCy, and yacy uninstall.
+18. ~ CHANGELOG, ROADMAP.md, PROPOSED.md: Each is headed yacy/, the repository's name.
+19. + TODO: yacy to open YaCy's page itself where YaCy, once started, doesn't.
+20. ~ ROADMAP.md, PROPOSED.md: Each points to TODO, which there now is.
+21. ~ bin/yacy: /0.7.1/0.8.0/
+
 
 ## 20261124
 
