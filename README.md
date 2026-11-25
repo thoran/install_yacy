@@ -64,7 +64,7 @@ The script puts its own `../lib` on the load path, so a clone kept whole is all 
 
 ```shell
 $ brew tap thoran/tap
-$ brew install install_yacy
+$ brew install yacy
 ```
 
 ## Dependencies

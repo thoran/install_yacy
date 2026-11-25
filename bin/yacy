@@ -2,7 +2,7 @@
 # yacy
 
 # 20261125
-# 0.8.0
+# 0.8.1
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)

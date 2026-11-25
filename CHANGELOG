@@ -2,6 +2,12 @@
 
 ## 20261125
 
+0.8.1: ~ README.md: /brew install install_yacy/brew install yacy/
+
+1. ~ README.md: /brew install install_yacy/brew install yacy/
+2. ~ bin/yacy: /0.8.0/0.8.1/
+
+
 0.8.0: install_yacy is now yacy, with install, start and stop as subcommands, and on its own it opens YaCy's page where YaCy is running already.
 
 1. /install_yacy/yacy/: bin/install_yacy is now bin/yacy.
