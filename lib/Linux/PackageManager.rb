@@ -1,9 +1,6 @@
 # Linux/PackageManager.rb
 # Linux::PackageManager
 
-# 20261123
-# 0.1.0
-
 require 'shellwords'
 
 module Linux

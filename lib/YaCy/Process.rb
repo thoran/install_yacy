@@ -1,9 +1,6 @@
 # YaCy/Process.rb
 # YaCy::Process
 
-# 20261125
-# 0.1.0
-
 require 'Kernel/run'
 require 'net/http'
 require 'shellwords'
@@ -52,6 +49,11 @@ module YaCy
     # Where a page opened here couldn't be seen.
     def give_yacy_address
       puts "YaCy is running at #{yacy_url}"
+    end
+
+    # Where DATA is left by yacy uninstall, so as YaCy installed again is the same peer, with the same index.
+    def give_yacy_data_kept
+      puts "YaCy's DATA, its index, settings and identity as a peer, is kept in #{yacy_data_dir}. yacy uninstall --data removes it." if Dir.exist?(yacy_data_dir)
     end
 
     def yacy_answering?

@@ -1,9 +1,6 @@
 # YaCy/Download.rb
 # YaCy::Download
 
-# 20261125
-# 0.1.0
-
 require 'fileutils'
 require 'Kernel/require_gem'
 require 'open-uri'

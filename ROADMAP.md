@@ -4,11 +4,10 @@ The discrete jobs are in TODO, and what is undecided is in PROPOSED.md. This hol
 
 ## Commands
 
-`yacy` has `install`, `start` and `stop` as subcommands, and on its own does each of what's needed for YaCy to be running and its page open. Still to come:
+`yacy` has `install`, `start`, `stop` and `uninstall` as subcommands, and on its own does each of what's needed for YaCy to be running and its page open. Still to come:
 
 - `yacy upgrade`: Replaces YaCy where download.yacy.net has a newer one than is installed.
 - `yacy` on its own says where download.yacy.net has a newer YaCy than is installed, and leaves the upgrade to `yacy upgrade`, so as YaCy isn't replaced and restarted when all that was wanted was the page.
-- `yacy uninstall`: What it removes is under Uninstalling in PROPOSED.md.
 
 Were anything of YaCy's to be configured, it would be a step of `yacy` on its own too.
 

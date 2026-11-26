@@ -1,9 +1,6 @@
 # YaCy/Homebrew.rb
 # YaCy::Homebrew
 
-# 20261125
-# 0.2.0
-
 require 'FileUtils/which'
 require 'Kernel/run'
 

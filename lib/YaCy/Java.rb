@@ -1,9 +1,6 @@
 # YaCy/Java.rb
 # YaCy::Java
 
-# 20261125
-# 0.1.0
-
 module YaCy
   # Where Java comes from: chosen by name, or by a path to a java, or left to auto. Each module using this one gives its own java_sources, beginning with existing and ending with adoptium, with between them the package managers it knows, and for each source a <source>_java_installed? and an install_<source>_java, as well as package_manager_installed?, path_java_installed? and install_path_java.
   module Java
@@ -43,9 +40,12 @@ module YaCy
 
     def install_java(java, allow_homebrew_install: false)
       case source = java_source(java)
-      when 'path' then install_path_java(java)
-      when 'homebrew' then install_homebrew_java(allow_homebrew_install: allow_homebrew_install)
-      else send("install_#{source}_java")
+      when 'path'
+        install_path_java(java)
+      when 'homebrew'
+        install_homebrew_java(allow_homebrew_install: allow_homebrew_install)
+      else
+        send("install_#{source}_java")
       end
     end
 

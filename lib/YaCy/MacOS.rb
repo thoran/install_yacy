@@ -1,9 +1,6 @@
 # YaCy/MacOS.rb
 # YaCy::MacOS
 
-# 20261125
-# 0.3.0
-
 require 'fileutils'
 require 'FileUtils/which'
 require 'YaCy/Adoptium'
@@ -31,8 +28,8 @@ module YaCy
 
     def package_manager_installed?(source)
       case source
-      when 'homebrew' then homebrew_installed?
-      when 'macports' then macports_installed?
+      when 'homebrew'; homebrew_installed?
+      when 'macports'; macports_installed?
       end
     end
 
@@ -243,6 +240,31 @@ module YaCy
       else
         give_yacy_address
       end
+    end
+    def remove_yacy
+      FileUtils.rm_rf(yacy_app, verbose: true) if yacy_app
+    end
+
+    # The directory YaCy.app keeps its DATA in, which holds nothing else.
+    def yacy_support_dir
+      File.dirname(yacy_data_dir)
+    end
+
+    def remove_yacy_data
+      FileUtils.rm_rf(yacy_support_dir, verbose: true) if Dir.exist?(yacy_support_dir)
+    end
+
+    # Adoptium's JRE is where java_home offers it to every other program wanting Java, which may be using it, and a JRE there may not be yacy's, so it's left unless asked for.
+    def remove_adoptium_java_by_default?
+      false
+    end
+
+    def yacy_downloads
+      Dir.glob(File.join(download_dir, 'yacy_v*.dmg'))
+    end
+
+    def remove_yacy_downloads
+      FileUtils.rm_f(yacy_downloads, verbose: true) unless yacy_downloads.empty?
     end
   end
 end

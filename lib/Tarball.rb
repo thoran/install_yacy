@@ -1,9 +1,6 @@
 # Tarball.rb
 # Tarball
 
-# 20261111
-# 0.0.0
-
 require 'fileutils'
 
 class Tarball

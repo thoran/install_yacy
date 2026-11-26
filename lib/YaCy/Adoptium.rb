@@ -1,10 +1,8 @@
 # YaCy/Adoptium.rb
 # YaCy::Adoptium
 
-# 20261125
-# 0.1.0
-
 require 'digest'
+require 'fileutils'
 require 'json'
 require 'open-uri'
 require 'rbconfig'
@@ -57,6 +55,28 @@ module YaCy
       download(adoptium_jre_package['link'])
       abort("#{adoptium_jre_tarball} doesn't match Adoptium's checksum. Delete it, and run yacy again.") unless adoptium_jre_checksum_matches?
       Tarball.extract(adoptium_jre_tarball, to: adoptium_dir)
+    end
+
+    # Each JRE unpacked into adoptium_dir, by yacy or as yacy would.
+    def adoptium_jres
+      Dir.glob(File.join(adoptium_dir, 'jdk-*-jre'))
+    end
+
+    def adoptium_jre_downloads
+      Dir.glob(File.join(download_dir, "OpenJDK*-jre_*_#{adoptium_os}_hotspot_*.tar.gz"))
+    end
+
+    def remove_adoptium_jre_downloads
+      FileUtils.rm_f(adoptium_jre_downloads, verbose: true) unless adoptium_jre_downloads.empty?
+    end
+
+    def remove_adoptium_java
+      FileUtils.rm_rf(adoptium_jres, verbose: true) unless adoptium_jres.empty?
+      remove_adoptium_jre_downloads
+    end
+
+    def give_adoptium_java_kept
+      announce("Adoptium's JRE is left in #{adoptium_jres.join(', ')}. yacy uninstall --jre=remove removes it.") unless adoptium_jres.empty?
     end
   end
 end

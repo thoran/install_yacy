@@ -312,6 +312,75 @@ describe YaCy::MacOS do
       end
     end
 
+    describe "uninstalling" do
+      let(:support_dir){File.join(home, 'Library', 'Application Support', 'net.yacy.YaCy')}
+      let(:downloads){File.join(home, 'Downloads')}
+
+      describe ".remove_yacy" do
+        it "removes YaCy.app, and not its DATA" do
+          FileUtils.mkdir_p(File.join(home, 'Applications', 'YaCy.app', 'Contents'))
+          FileUtils.mkdir_p(File.join(support_dir, 'DATA'))
+          capture_io{YaCy::MacOS.remove_yacy}
+          expect(YaCy::MacOS.yacy_installed?).must_equal false
+          expect(Dir.exist?(File.join(support_dir, 'DATA'))).must_equal true
+        end
+
+        it "does nothing where YaCy isn't installed" do
+          out, _ = capture_io{YaCy::MacOS.remove_yacy}
+          expect(out).must_equal ''
+        end
+      end
+
+      describe ".remove_yacy_data" do
+        it "removes net.yacy.YaCy, which holds YaCy's DATA" do
+          FileUtils.mkdir_p(File.join(support_dir, 'DATA', 'SETTINGS'))
+          capture_io{YaCy::MacOS.remove_yacy_data}
+          expect(Dir.exist?(support_dir)).must_equal false
+        end
+      end
+
+      describe "Adoptium's JRE" do
+        let(:jvms){File.join(home, 'Library', 'Java', 'JavaVirtualMachines')}
+        let(:jre){File.join(jvms, 'jdk-25.0.5.1+2-jre')}
+
+        before do
+          FileUtils.mkdir_p(File.join(jre, 'Contents', 'Home', 'bin'))
+          FileUtils.mkdir_p(File.join(jvms, 'temurin-21.jdk'))
+          FileUtils.mkdir_p(downloads)
+          FileUtils.touch(File.join(downloads, 'OpenJDK25U-jre_aarch64_mac_hotspot_25.0.5.1_2.tar.gz'))
+        end
+
+        it "is left by default" do
+          expect(YaCy::MacOS.remove_adoptium_java_by_default?).must_equal false
+        end
+
+        it "says where it's left, and how to remove it" do
+          out, _ = capture_io{YaCy::MacOS.give_adoptium_java_kept}
+          expect(out).must_equal "Java: Adoptium's JRE is left in #{jre}. yacy uninstall --jre=remove removes it.\n"
+        end
+
+        it "is removed, with its download, and no other Java" do
+          capture_io{YaCy::MacOS.remove_adoptium_java}
+          expect(Dir.children(jvms)).must_equal ['temurin-21.jdk']
+          expect(Dir.children(downloads)).must_equal []
+        end
+      end
+
+      describe ".remove_yacy_downloads" do
+        it "removes YaCy's disk images from ~/Downloads, and nothing else there" do
+          FileUtils.mkdir_p(File.join(downloads, 'yacy'))
+          %w{yacy_v1.930_202405130205_59c0cb0f3.dmg yacy_v1.942_202608150808_f9c4b9700.dmg other.dmg}.each{|name| FileUtils.touch(File.join(downloads, name))}
+          capture_io{YaCy::MacOS.remove_yacy_downloads}
+          expect(Dir.children(downloads).sort).must_equal %w{other.dmg yacy}
+        end
+
+        it "does nothing where there are none" do
+          out, _ = capture_io{YaCy::MacOS.remove_yacy_downloads}
+          expect(out).must_equal ''
+        end
+      end
+    end
+
     describe "with or without SSH" do
       before do
         @ssh_connection = ENV['SSH_CONNECTION']

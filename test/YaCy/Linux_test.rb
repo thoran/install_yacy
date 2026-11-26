@@ -386,6 +386,69 @@ describe YaCy::Linux do
     end
   end
 
+  describe "uninstalling" do
+    let(:yacy_dir){File.join(home, '.local', 'share', 'yacy')}
+    let(:downloads){File.join(home, 'Downloads')}
+
+    describe ".remove_yacy" do
+      it "removes all of YaCy but its DATA" do
+        FileUtils.mkdir_p(File.join(yacy_dir, 'DATA', 'SETTINGS'))
+        FileUtils.mkdir_p(File.join(yacy_dir, 'lib'))
+        FileUtils.touch(File.join(yacy_dir, 'startYACY.sh'))
+        capture_io{YaCy::Linux.remove_yacy}
+        expect(Dir.children(yacy_dir)).must_equal ['DATA']
+        expect(YaCy::Linux.yacy_installed?).must_equal false
+      end
+
+      it "does nothing where YaCy isn't installed" do
+        out, _ = capture_io{YaCy::Linux.remove_yacy}
+        expect(out).must_equal ''
+      end
+    end
+
+    describe ".remove_yacy_data" do
+      it "removes YaCy's directory, DATA and all" do
+        FileUtils.mkdir_p(File.join(yacy_dir, 'DATA', 'SETTINGS'))
+        capture_io{YaCy::Linux.remove_yacy_data}
+        expect(Dir.exist?(yacy_dir)).must_equal false
+      end
+    end
+
+    describe "Adoptium's JRE" do
+      let(:jre_dir){File.join(home, '.local', 'share', 'yacy-jre')}
+
+      before do
+        FileUtils.mkdir_p(File.join(jre_dir, 'jdk-25.0.5.1+2-jre', 'bin'))
+        FileUtils.mkdir_p(downloads)
+        %w{OpenJDK25U-jre_x64_linux_hotspot_25.0.5.1_2.tar.gz OpenJDK25U-jdk_x64_linux_hotspot_25.0.5.1_2.tar.gz}.each{|name| FileUtils.touch(File.join(downloads, name))}
+      end
+
+      it "is removed by default" do
+        expect(YaCy::Linux.remove_adoptium_java_by_default?).must_equal true
+      end
+
+      it "is removed, with yacy-jre and its download, and nothing else in ~/Downloads" do
+        capture_io{YaCy::Linux.remove_adoptium_java}
+        expect(Dir.exist?(jre_dir)).must_equal false
+        expect(Dir.children(downloads)).must_equal ['OpenJDK25U-jdk_x64_linux_hotspot_25.0.5.1_2.tar.gz']
+      end
+
+      it "says where it's left, and how to remove it" do
+        out, _ = capture_io{YaCy::Linux.give_adoptium_java_kept}
+        expect(out).must_equal "Java: Adoptium's JRE is left in #{File.join(jre_dir, 'jdk-25.0.5.1+2-jre')}. yacy uninstall --jre=remove removes it.\n"
+      end
+    end
+
+    describe ".remove_yacy_downloads" do
+      it "removes YaCy's tarballs from ~/Downloads, and nothing else there" do
+        FileUtils.mkdir_p(downloads)
+        %w{yacy_v1.940_202405270005_70454654f.tar.gz yacy_v1.942_202608150808_f9c4b9700.tar.gz other.tar.gz}.each{|name| FileUtils.touch(File.join(downloads, name))}
+        capture_io{YaCy::Linux.remove_yacy_downloads}
+        expect(Dir.children(downloads)).must_equal ['other.tar.gz']
+      end
+    end
+  end
+
   # A tarball holding an executable at path, in the directories path is in.
   def tarball_holding(path)
     io = StringIO.new

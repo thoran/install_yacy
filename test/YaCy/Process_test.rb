@@ -126,6 +126,19 @@ describe YaCy::Process do
     end
   end
 
+  describe ".give_yacy_data_kept" do
+    it "says where YaCy's DATA is kept, and how to remove it" do
+      FileUtils.mkdir_p(File.join(dir, 'DATA'))
+      out, _ = capture_io{yacy.give_yacy_data_kept}
+      expect(out).must_equal "YaCy's DATA, its index, settings and identity as a peer, is kept in #{File.join(dir, 'DATA')}. yacy uninstall --data removes it.\n"
+    end
+
+    it "says nothing where there's no DATA" do
+      out, _ = capture_io{yacy.give_yacy_data_kept}
+      expect(out).must_equal ''
+    end
+  end
+
   describe ".yacy_answering?" do
     it "is true where YaCy answers on its port" do
       stub_request(:head, 'http://localhost:8090/').to_return(status: 200)

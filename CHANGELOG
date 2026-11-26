@@ -1,5 +1,30 @@
 # yacy/CHANGELOG
 
+## 20261126
+
+0.10.0: + yacy uninstall, which removes YaCy, keeping its DATA unless --data.
+
+1. + YaCy::MacOS.remove_yacy(), remove_yacy_data(): They remove YaCy.app, and net.yacy.YaCy, which holds its DATA.
+2. + YaCy::Linux.remove_yacy(): It removes all of yacy_dir but DATA, which is within it. + remove_yacy_data(): It removes yacy_dir.
+3. + YaCy::Adoptium.adoptium_jres(), adoptium_jre_downloads(), remove_adoptium_jre_downloads(), remove_adoptium_java(), give_adoptium_java_kept(): Adoptium's JREs in adoptium_dir, and their downloads in ~/Downloads, removed, or said where they're left.
+4. + YaCy::MacOS.remove_adoptium_java_by_default?(): It's false, since java_home offers Adoptium's JRE to every other program wanting Java, and a JRE there may not be yacy's.
+5. + YaCy::Linux.remove_adoptium_java_by_default?(): It's true, since adoptium_dir is put there by yacy alone, and isn't on PATH. + remove_adoptium_java(): It removes adoptium_dir, and the JRE's download.
+6. + YaCy::MacOS.remove_yacy_downloads(), YaCy::Linux.remove_yacy_downloads(): They remove YaCy's disk images or tarballs from ~/Downloads.
+7. + YaCy::Process.give_yacy_data_kept(): It says where DATA is kept, and that --data removes it.
+8. ~ bin/yacy: + uninstall(), run by the subcommand uninstall: It stops YaCy where it's running, then removes YaCy, its DATA with --data, Adoptium's JRE as --jre or the platform says, and the downloads. Java from a package manager is never removed.
+9. ~ bin/yacy: + --data; + validate_data(), which stops where --data is given other than with uninstall.
+10. ~ bin/yacy: + --jre=keep|remove, overriding the platform's default; + jre_choices(), validate_jre(), which stops where --jre is given other than with uninstall, or is neither keep nor remove.
+11. ~ bin/yacy: + remove_yacy(), remove_yacy_data(), give_yacy_data_kept(), remove_adoptium_java(), give_adoptium_java_kept(), remove_yacy_downloads(), each taken by platform(); + remove_data?(), remove_adoptium_java?().
+12. ~ bin/yacy: usage(): + uninstall, + --data, + --jre. It says only --java and --install-homebrew may be set in config.yaml.
+13. ~ test/YaCy/MacOS_test.rb, test/YaCy/Linux_test.rb, test/YaCy/Process_test.rb: Uninstalling is tested.
+14. ~ README.md: Usage: + uninstall, + --data, + --jre. Notes: What yacy uninstall removes and keeps, in place of there being no uninstaller. Installation: brew uninstall yacy leaves YaCy. Tests: + Process_test.rb.
+15. ~ PROPOSED.md: - Uninstalling, being settled.
+16. ~ ROADMAP.md: Commands: uninstall is among the subcommands, rather than still to come.
+17. ~ bin/yacy: main(); YaCy::Java.install_java(), YaCy::MacOS.package_manager_installed?(), YaCy::Linux.package_manager_installed?(): Each when is joined to its result with ;, or has it on the line below, rather than with then.
+18. ~ lib/YaCy/*.rb, lib/Tarball.rb, lib/Linux/PackageManager.rb: - The date and version lines, the CHANGELOG and tags dating and versioning yacy as a whole.
+19. ~ bin/yacy: /0.9.0/0.10.0/
+
+
 ## 20261125
 
 0.9.0: Open the search page if YaCy doesn't.

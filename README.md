@@ -12,7 +12,7 @@ YaCy runs on Java 17 or later, and ships for macOS as a disk image and for Linux
 4. Starts YaCy, unless it's running already, and waits until YaCy answers on its port, for up to two minutes. On macOS it opens `YaCy.app`. On Linux it runs YaCy's `startYACY.sh`, which starts YaCy in the background. YaCy opens its page, `browserPopUpPage` in its `DATA/SETTINGS/yacy.conf`, in the default browser as it starts, unless `browserPopUpTrigger` there is `false`.
 5. Where YaCy was running already, or doesn't open its own page, opens the same page, http://localhost:8090/index.html unless YaCy's settings give another port or page: with `open` on macOS, and with `xdg-open` on Linux. Where the page couldn't be seen, on Linux with no display, as on a server, or on a Mac reached over SSH, whose page would open on the Mac's own screen, it gives YaCy's address instead, whether or not YaCy opens its own page.
 
-Run again once YaCy is running, it only opens its page. Installing, starting and stopping may each be done alone, as under Usage.
+Run again once YaCy is running, it only opens its page. Installing, starting, stopping and uninstalling may each be done alone, as under Usage.
 
 ### Java
 
@@ -67,6 +67,8 @@ $ brew tap thoran/tap
 $ brew install yacy
 ```
 
+`brew uninstall yacy` removes the command, and leaves YaCy, which the command installed rather than Homebrew. Run `yacy uninstall` first to remove YaCy too.
+
 ## Dependencies
 
 Three gems, each installed by the script where it can't be required:
@@ -84,15 +86,19 @@ $ yacy/bin/yacy --java=homebrew --install-homebrew
 $ yacy/bin/yacy --java=/opt/jdk-21/bin/java
 $ yacy/bin/yacy install
 $ yacy/bin/yacy stop
+$ yacy/bin/yacy uninstall
+$ yacy/bin/yacy uninstall --data
+$ yacy/bin/yacy uninstall --jre=remove
 ```
 
 Subcommands:
 
 ```
-(none)   Install YaCy unless it's installed, start it unless it's running, and open its page
-install  Install YaCy, and Java for it, unless they're installed
-start    Start YaCy, unless it's running
-stop     Stop YaCy, where it's running
+(none)     Install YaCy unless it's installed, start it unless it's running, and open its page
+install    Install YaCy, and Java for it, unless they're installed
+start      Start YaCy, unless it's running
+stop       Stop YaCy, where it's running
+uninstall  Stop YaCy and remove it, keeping its DATA unless --data, and Adoptium's JRE on Linux unless --jre=keep
 ```
 
 Options:
@@ -100,10 +106,12 @@ Options:
 ```
 --java=SOURCE       Where Java comes from: auto, existing, homebrew, macports (macOS), system (Linux), adoptium, or a path to a java (default: auto)
 --install-homebrew  Install Homebrew without asking, where --java=homebrew and it isn't installed
+--data              With uninstall, remove YaCy's DATA too: its index, settings and identity as a peer
+--jre=keep|remove   With uninstall, keep or remove Adoptium's JRE (default: remove on Linux, keep on macOS)
 -h, --help          Show the options
 ```
 
-Either may be set in `~/.config/yacy/config.yaml` instead, the switch winning where both are given:
+`--java` and `--install-homebrew` may each be set in `~/.config/yacy/config.yaml` instead, the switch winning where both are given:
 
 ```yaml
 java: adoptium
@@ -133,8 +141,12 @@ On Linux:
 4. A JRE from Adoptium gets no updates other than by running `yacy` again once it's removed, where Java from a package manager is updated along with the rest of what the package manager installed.
 5. On macOS, YaCy is found to be installed where `YaCy.app` is in `~/Applications` or `/Applications`, wherever it came from. On Linux, where `startYACY.sh` is in `~/.local/share/yacy`. On either, YaCy is found to be running where the process named in its own `yacy.running`, in its `DATA`, is running, a `yacy.running` being left behind where YaCy didn't shut down cleanly. It's stopped as YaCy's own `stopYACY.sh` stops it, by asking it through its API, which YaCy lets do from the same computer without a password unless its settings say otherwise, when the password is asked for.
 6. `startYACY.sh` needs `getopt`, from util-linux, which all but the most minimal Linux installs have.
-7. There is no uninstaller. On macOS, YaCy keeps its index and settings in `~/Library/Application Support/net.yacy.YaCy`, apart from the app. On Linux, it keeps them in `DATA` within `~/.local/share/yacy`.
-8. The disk image or tarball is left in `~/Downloads`, so as a second install doesn't download it again. On Linux, `~/Downloads` is made where there isn't one.
+7. The disk image or tarball is left in `~/Downloads`, so as a second install doesn't download it again. On Linux, `~/Downloads` is made where there isn't one.
+8. `yacy uninstall` stops YaCy, where it's running, and removes:
+   1. YaCy: `YaCy.app` on macOS, and all of `~/.local/share/yacy` but its `DATA` on Linux.
+   2. YaCy's `DATA`, holding its index, its settings and the peer's identity, only with `--data`. Otherwise it's kept, and said where, so as YaCy installed again is the same peer, with the same index. On macOS it's `~/Library/Application Support/net.yacy.YaCy`, apart from the app. On Linux it's `DATA` within `~/.local/share/yacy`.
+   3. Adoptium's JRE, with its download, unless `--jre=keep` on Linux, and only with `--jre=remove` on macOS. On Linux it's in `~/.local/share/yacy-jre`, which nothing but `yacy` puts there, and isn't on `PATH`. On macOS it's in `~/Library/Java/JavaVirtualMachines`, where `java_home` offers it to every other program wanting Java, and where a JRE may not be one `yacy` put there. Where it's kept, it's said where. Java from a package manager is left on either, since something else may be relying upon it.
+   4. The YaCy disk images or tarballs in `~/Downloads`, named `yacy_v`, whichever versions they are.
 
 ## Tests
 
@@ -142,6 +154,7 @@ On Linux:
 $ bundle install
 $ bundle exec ruby test/YaCy/MacOS_test.rb
 $ bundle exec ruby test/YaCy/Linux_test.rb
+$ bundle exec ruby test/YaCy/Process_test.rb
 $ bundle exec ruby test/Linux/PackageManager_test.rb
 $ bundle exec ruby test/Tarball_test.rb
 ```

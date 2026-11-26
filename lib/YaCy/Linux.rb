@@ -1,9 +1,7 @@
 # YaCy/Linux.rb
 # YaCy::Linux
 
-# 20261125
-# 0.3.0
-
+require 'fileutils'
 require 'FileUtils/which'
 require 'YaCy/Adoptium'
 require 'YaCy/Download'
@@ -29,8 +27,8 @@ module YaCy
 
     def package_manager_installed?(source)
       case source
-      when 'homebrew' then homebrew_usable?
-      when 'system' then !!system_package_manager
+      when 'homebrew'; homebrew_usable?
+      when 'system'; !!system_package_manager
       end
     end
 
@@ -194,6 +192,34 @@ module YaCy
       else
         give_yacy_address
       end
+    end
+    # DATA is within yacy_dir, so all else is removed, leaving DATA for YaCy installed again.
+    def remove_yacy
+      return unless Dir.exist?(yacy_dir)
+      paths = Dir.children(yacy_dir).reject{|entry| entry == 'DATA'}.map{|entry| File.join(yacy_dir, entry)}
+      FileUtils.rm_rf(paths, verbose: true) unless paths.empty?
+    end
+
+    def remove_yacy_data
+      FileUtils.rm_rf(yacy_dir, verbose: true) if Dir.exist?(yacy_dir)
+    end
+
+    # adoptium_dir is put there by yacy alone, and isn't on PATH, so nothing else is using it.
+    def remove_adoptium_java_by_default?
+      true
+    end
+
+    def remove_adoptium_java
+      FileUtils.rm_rf(adoptium_dir, verbose: true) if Dir.exist?(adoptium_dir)
+      remove_adoptium_jre_downloads
+    end
+
+    def yacy_downloads
+      Dir.glob(File.join(download_dir, 'yacy_v*.tar.gz'))
+    end
+
+    def remove_yacy_downloads
+      FileUtils.rm_f(yacy_downloads, verbose: true) unless yacy_downloads.empty?
     end
   end
 end

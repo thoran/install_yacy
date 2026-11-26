@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # yacy
 
-# 20261125
-# 0.9.0
+# 20261126
+# 0.10.0
 
 lib_dir = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
@@ -40,26 +40,31 @@ end
 def usage
   puts "yacy - Installs YaCy, and Java for it where it's wanted, starts it, and opens its page."
   puts
-  puts "Usage: yacy [SUBCOMMAND] [--java=SOURCE] [--install-homebrew]"
+  puts "Usage: yacy [SUBCOMMAND] [--java=SOURCE] [--install-homebrew] [--data] [--jre=keep|remove]"
   puts
   puts "Subcommands:"
-  puts "  (none)   Install YaCy unless it's installed, start it unless it's running, and open its page"
-  puts "  install  Install YaCy, and Java for it, unless they're installed"
-  puts "  start    Start YaCy, unless it's running"
-  puts "  stop     Stop YaCy, where it's running"
+  puts "  (none)     Install YaCy unless it's installed, start it unless it's running, and open its page"
+  puts "  install    Install YaCy, and Java for it, unless they're installed"
+  puts "  start      Start YaCy, unless it's running"
+  puts "  stop       Stop YaCy, where it's running"
+  puts "  uninstall  Stop YaCy and remove it, keeping its DATA unless --data, and Adoptium's JRE on Linux unless --jre=keep"
   puts
   puts "Options:"
   puts "  --java=SOURCE       Where Java comes from: #{platform.java_choices.join(', ')}, or a path to a java (default: auto)"
   puts "  --install-homebrew  Install Homebrew without asking, where --java=homebrew and it isn't installed"
+  puts "  --data              With uninstall, remove YaCy's DATA too: its index, settings and identity as a peer"
+  puts "  --jre=keep|remove   With uninstall, keep or remove Adoptium's JRE (default: remove on Linux, keep on macOS)"
   puts "  -h, --help          Show this help"
   puts
-  puts "Each option may be set in #{config_path} instead, as java: and install_homebrew:."
+  puts "--java and --install-homebrew may each be set in #{config_path} instead, as java: and install_homebrew:."
 end
 
 def switches
   @switches ||= Switches.new do |s|
     s.set!(:java){'Where Java comes from'}
     s.boolean(:install_homebrew){'Install Homebrew without asking'}
+    s.boolean(:data){"Remove YaCy's DATA too, with uninstall"}
+    s.set!(:jre){"Keep or remove Adoptium's JRE, with uninstall"}
     s.perform(:h, :help?) do
       usage
       exit
@@ -70,7 +75,7 @@ rescue OptionParser::ParseError => e
 end
 
 def subcommands
-  %w{install start stop}
+  %w{install start stop uninstall}
 end
 
 def subcommand
@@ -80,6 +85,20 @@ end
 def validate_subcommand
   return if subcommand.nil? || subcommands.include?(subcommand)
   abort("#{subcommand} isn't a subcommand. Run yacy --help for the subcommands.")
+end
+
+def validate_data
+  abort("--data is for yacy uninstall only.") if switches.data? && subcommand != 'uninstall'
+end
+
+def jre_choices
+  %w{keep remove}
+end
+
+def validate_jre
+  return unless switches.jre
+  abort("--jre is for yacy uninstall only.") unless subcommand == 'uninstall'
+  abort("--jre is one of #{jre_choices.join(' or ')}.") unless jre_choices.include?(switches.jre)
 end
 
 def config_path
@@ -156,6 +175,39 @@ def open_yacy_page
   platform.open_yacy_page
 end
 
+def remove_yacy
+  platform.remove_yacy
+end
+
+def remove_data?
+  switches.data?
+end
+
+def remove_yacy_data
+  platform.remove_yacy_data
+end
+
+def give_yacy_data_kept
+  platform.give_yacy_data_kept
+end
+
+# Java from a package manager is never removed, since something else may be relying upon it.
+def remove_adoptium_java?
+  switches.jre ? switches.jre == 'remove' : platform.remove_adoptium_java_by_default?
+end
+
+def remove_adoptium_java
+  platform.remove_adoptium_java
+end
+
+def give_adoptium_java_kept
+  platform.give_adoptium_java_kept
+end
+
+def remove_yacy_downloads
+  platform.remove_yacy_downloads
+end
+
 def check_yacy_installed
   abort("YaCy isn't installed. Run yacy, or yacy install.") unless yacy_installed?
 end
@@ -175,6 +227,14 @@ def stop
   stop_yacy if yacy_running?
 end
 
+def uninstall
+  stop_yacy if yacy_running?
+  remove_yacy
+  remove_data? ? remove_yacy_data : give_yacy_data_kept
+  remove_adoptium_java? ? remove_adoptium_java : give_adoptium_java_kept
+  remove_yacy_downloads
+end
+
 # Where YaCy is started here, its page is opened once it answers, unless YaCy opens it itself, or its address given where there's no display for YaCy to open it on.
 def install_start_and_open
   install
@@ -190,11 +250,14 @@ end
 def main
   switches
   validate_subcommand
+  validate_data
+  validate_jre
   validate_java
   case subcommand
-  when 'install' then install
-  when 'start' then start
-  when 'stop' then stop
+  when 'install'; install
+  when 'start'; start
+  when 'stop'; stop
+  when 'uninstall'; uninstall
   else install_start_and_open
   end
 end
